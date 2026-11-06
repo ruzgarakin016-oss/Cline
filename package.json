@@ -1,0 +1,23 @@
+{
+  "name": "arexi",
+  "version": "0.1.0",
+  "description": "Arexi — terminalde çalışan, bilgisayarında tam yetkili otonom yapay zekâ asistanı (Claude API üzerinde).",
+  "type": "module",
+  "bin": {
+    "arexi": "bin/arexi.js"
+  },
+  "main": "src/agent.js",
+  "scripts": {
+    "start": "node bin/arexi.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20.12"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@anthropic-ai/sdk": "1.6.0",
+    "fast-glob": "3.3.3",
+    "zod": "4.6.7"
+  }
+}
