@@ -2,14 +2,16 @@
 import fs from "node:fs";
 import path from "node:path";
 import readline from "node:readline/promises";
-import Anthropic from "@anthropic-ai/sdk";
 import { Agent } from "../src/agent.js";
+import { explainError } from "../src/errors.js";
+import { createTerminalIO } from "../src/terminal.js";
 import { EFFORTS, MODES, loadConfig, saveConfig } from "../src/config.js";
 import { runTool } from "../src/tools.js";
 import { banner, c, line } from "../src/ui.js";
 
 const HELP = `
 Kullanım: arexi [seçenekler] [görev]
+         arexi serve [--port 7777] [--host 0.0.0.0] [--full]   Telefon uygulaması sunucusunu başlat
 
 Seçenekler:
   --full                 Tam yetki modu (hiçbir işlem için onay istemez)
@@ -56,18 +58,11 @@ function parseArgs(argv) {
   return opts;
 }
 
-function explainError(err) {
-  if (err instanceof Anthropic.AuthenticationError)
-    return "Kimlik doğrulama başarısız. ANTHROPIC_API_KEY ortam değişkenini ayarla (https://console.anthropic.com).";
-  if (err instanceof Anthropic.RateLimitError) return "Hız sınırına takıldın, biraz bekleyip tekrar dene.";
-  if (err instanceof Anthropic.BadRequestError) return `İstek hatası: ${err.message}`;
-  if (err instanceof Anthropic.APIUserAbortError) return "Durduruldu.";
-  if (err instanceof Anthropic.APIError) return `API hatası ${err.status ?? ""}: ${err.message}`;
-  if (err?.name === "AbortError") return "Durduruldu.";
-  return `Hata: ${err?.stack || err}`;
-}
-
 async function main() {
+  if (process.argv[2] === "serve") {
+    const { startServer } = await import("../src/server.js");
+    return startServer(process.argv.slice(3));
+  }
   const opts = parseArgs(process.argv.slice(2));
   if (opts.help) return void line(HELP);
   const cfg = loadConfig(opts.overrides);
@@ -99,12 +94,10 @@ async function main() {
     });
   };
 
-  const io = {
-    ask: (q) => {
-      if (opts.prompt && !process.stdin.isTTY) return Promise.resolve("h");
-      return nextLine(q, controller?.signal);
-    },
-  };
+  const io = createTerminalIO((q) => {
+    if (opts.prompt && !process.stdin.isTTY) return Promise.resolve("h");
+    return nextLine(q, controller?.signal);
+  });
   const agent = new Agent(cfg, io);
 
   rl.on("SIGINT", () => {

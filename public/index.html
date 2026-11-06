@@ -1,0 +1,574 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<title>Arexi</title>
+<meta name="description" content="Bilgisayarındaki Arexi asistanını telefondan yönet.">
+<meta name="theme-color" content="#7c3aed">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Arexi">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<style>
+:root {
+  --bg: #f6f5fa; --surface: #ffffff; --surface-2: #efedf5; --border: #e2dfeb;
+  --text: #1c1a24; --muted: #6b6779; --accent: #7c3aed; --accent-text: #ffffff;
+  --user: #7c3aed; --user-text: #ffffff; --ok: #15803d; --warn: #b45309; --err: #c62828;
+  --code-bg: #1e1b2a; --code-text: #ece9f5;
+  --radius: 16px; --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f0d15; --surface: #1a1724; --surface-2: #242031; --border: #2f2a3f;
+    --text: #ece9f5; --muted: #9c97ad; --accent: #a78bfa; --accent-text: #160f29;
+    --user: #6d28d9; --user-text: #ffffff; --ok: #4ade80; --warn: #fbbf24; --err: #f87171;
+    --code-bg: #0b0a10; --code-text: #ece9f5; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f0d15; --surface: #1a1724; --surface-2: #242031; --border: #2f2a3f;
+  --text: #ece9f5; --muted: #9c97ad; --accent: #a78bfa; --accent-text: #160f29;
+  --user: #6d28d9; --user-text: #ffffff; --ok: #4ade80; --warn: #fbbf24; --err: #f87171;
+  --code-bg: #0b0a10; --code-text: #ece9f5; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: var(--bg); color: var(--text); font: 16px/1.5 var(--font);
+  display: flex; flex-direction: column; height: 100dvh; overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+.hidden { display: none !important; }
+
+/* Header */
+header {
+  display: flex; align-items: center; gap: 10px;
+  padding: calc(10px + env(safe-area-inset-top)) 16px 10px;
+  background: var(--surface); border-bottom: 1px solid var(--border);
+}
+.logo { width: 32px; height: 32px; border-radius: 9px; flex: none; }
+.title { flex: 1; min-width: 0; }
+.title b { display: block; font-size: 17px; }
+.title small { display: block; color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); margin-right: 5px; vertical-align: 1px; }
+.dot.on { background: var(--ok); }
+.dot.busy { background: var(--accent); animation: pulse 1s infinite; }
+@keyframes pulse { 50% { opacity: .3; } }
+.chip {
+  border: 1px solid var(--border); background: var(--surface-2); border-radius: 999px;
+  padding: 4px 10px; font-size: 13px; white-space: nowrap;
+}
+.chip.full { background: var(--err); color: #fff; border-color: transparent; }
+.icon-btn { border: 0; background: transparent; width: 40px; height: 40px; border-radius: 10px; font-size: 20px; }
+.icon-btn:active { background: var(--surface-2); }
+
+/* Transcript */
+main { flex: 1; overflow-y: auto; padding: 16px; overscroll-behavior: contain; }
+.empty { text-align: center; color: var(--muted); margin-top: 18vh; padding: 0 16px; }
+.empty .logo { width: 64px; height: 64px; border-radius: 18px; margin-bottom: 8px; }
+.suggest { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 16px; }
+.suggest button { border: 1px solid var(--border); background: var(--surface); border-radius: 12px; padding: 8px 12px; font-size: 14px; }
+.msg { margin: 0 0 14px; max-width: 100%; overflow-wrap: anywhere; }
+.user { margin-left: auto; width: fit-content; max-width: 85%; background: var(--user); color: var(--user-text); padding: 10px 14px; border-radius: var(--radius) var(--radius) 4px var(--radius); white-space: pre-wrap; }
+.assistant p { margin: 0 0 8px; }
+.assistant p:last-child { margin-bottom: 0; }
+.assistant h1, .assistant h2, .assistant h3 { font-size: 17px; margin: 12px 0 6px; }
+.assistant ul, .assistant ol { margin: 4px 0 8px; padding-left: 22px; }
+.assistant code { font-family: var(--mono); font-size: 14px; background: var(--surface-2); padding: 1px 5px; border-radius: 5px; }
+.assistant pre { background: var(--code-bg); color: var(--code-text); padding: 12px; border-radius: 12px; overflow-x: auto; font-size: 13px; }
+.assistant pre code { background: none; padding: 0; color: inherit; }
+.assistant a { color: var(--accent); }
+details.thinking { color: var(--muted); font-size: 14px; }
+details.thinking summary { cursor: pointer; list-style: none; }
+details.thinking summary::before { content: "✻ "; }
+details.thinking div { white-space: pre-wrap; padding: 6px 0 0 18px; border-left: 2px solid var(--border); margin-top: 4px; }
+.tool { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.tool-head { display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; font-family: var(--mono); font-size: 13px; }
+.tool-head .st { flex: none; width: 18px; text-align: center; }
+.tool-head .d { flex: 1; min-width: 0; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 7.5em; overflow: hidden; }
+.tool.run .st::before { content: "◌"; display: inline-block; animation: spin 1s linear infinite; }
+.tool.ok .st::before { content: "✓"; color: var(--ok); }
+.tool.err .st::before { content: "✗"; color: var(--err); }
+@keyframes spin { to { transform: rotate(360deg); } }
+.tool pre { margin: 0; padding: 10px 12px; background: var(--code-bg); color: var(--code-text); font: 12px/1.45 var(--mono); max-height: 260px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
+.tool details summary { padding: 0 12px 10px 38px; color: var(--muted); font-size: 13px; cursor: pointer; }
+.chip-line { color: var(--muted); font-size: 14px; }
+.notice { text-align: center; font-size: 13px; color: var(--muted); }
+.notice.warn { color: var(--warn); }
+.notice.error { color: var(--err); }
+.perm { border: 2px solid var(--accent); border-radius: 14px; padding: 12px; background: var(--surface); }
+.perm h4 { margin: 0 0 6px; font-size: 15px; }
+.perm pre { background: var(--code-bg); color: var(--code-text); border-radius: 8px; padding: 8px 10px; font: 12px/1.45 var(--mono); max-height: 220px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; margin: 0 0 10px; }
+.perm .del { color: #fca5a5; } .perm .add { color: #86efac; }
+.perm .row { display: flex; gap: 8px; flex-wrap: wrap; }
+.perm .row button { flex: 1 1 30%; min-height: 44px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); font-weight: 600; }
+.perm .row button.yes { background: var(--accent); color: var(--accent-text); border-color: transparent; }
+.perm .note { display: flex; gap: 8px; margin-top: 8px; }
+.perm .note input { flex: 1; min-width: 0; }
+.perm .done { color: var(--muted); font-size: 14px; }
+.perm-done { color: var(--muted); font-size: 13px; padding: 0 12px 10px 38px; margin-top: -4px; }
+
+/* Composer */
+footer { background: var(--surface); border-top: 1px solid var(--border); padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); }
+.composer { display: flex; align-items: flex-end; gap: 8px; }
+textarea, input, select {
+  font: inherit; color: var(--text); background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 14px; padding: 10px 14px; outline: none; font-size: 16px;
+}
+textarea { flex: 1; resize: none; max-height: 160px; min-height: 44px; }
+textarea:focus, input:focus, select:focus { border-color: var(--accent); }
+.send { flex: none; width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--accent); color: var(--accent-text); font-size: 20px; }
+.send:disabled { opacity: .4; }
+.send.stop { background: var(--err); color: #fff; }
+
+/* Sheets */
+.sheet-bg { position: fixed; inset: 0; background: rgb(0 0 0 / .45); display: flex; align-items: flex-end; justify-content: center; z-index: 10; }
+.sheet { background: var(--surface); width: 100%; max-width: 560px; border-radius: 20px 20px 0 0; padding: 20px 16px calc(20px + env(safe-area-inset-bottom)); max-height: 90dvh; overflow-y: auto; }
+.sheet h3 { margin: 0 0 14px; }
+.sheet label { display: block; font-size: 13px; color: var(--muted); margin: 14px 0 6px; }
+.modes { display: grid; gap: 8px; }
+.modes button { text-align: left; border: 1px solid var(--border); background: var(--surface-2); border-radius: 12px; padding: 10px 12px; }
+.modes button.sel { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.modes button small { display: block; color: var(--muted); }
+.modes button.full.sel { border-color: var(--err); box-shadow: 0 0 0 1px var(--err); }
+.seg { display: flex; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.seg button { flex: 1; border: 0; background: var(--surface-2); padding: 9px 0; font-size: 14px; }
+.seg button.sel { background: var(--accent); color: var(--accent-text); }
+.sheet .wide { width: 100%; min-height: 46px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-2); margin-top: 10px; }
+.sheet .danger { color: var(--err); }
+.info { font-size: 13px; color: var(--muted); margin-top: 14px; overflow-wrap: anywhere; }
+.toggle { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; }
+.toggle input { width: 22px; height: 22px; accent-color: var(--accent); }
+
+/* Login */
+.login { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 24px; max-width: 460px; margin: 0 auto; width: 100%; }
+.login .logo { width: 72px; height: 72px; border-radius: 20px; margin: 0 auto 12px; display: block; }
+.login h1 { text-align: center; margin: 0 0 6px; }
+.login p { color: var(--muted); text-align: center; margin: 0 0 20px; }
+.login input { width: 100%; }
+.login button { width: 100%; min-height: 48px; margin-top: 12px; border: 0; border-radius: 14px; background: var(--accent); color: var(--accent-text); font-weight: 600; }
+.login .err { color: var(--err); text-align: center; min-height: 1.5em; margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<section id="login" class="login hidden">
+  <img class="logo" src="icon.svg" alt="">
+  <h1>Arexi</h1>
+  <p>Bilgisayarında <code>arexi serve</code> çalıştır, terminaldeki QR kodu okut veya erişim anahtarını buraya yapıştır.</p>
+  <input id="tokenInput" type="password" autocomplete="off" placeholder="Erişim anahtarı">
+  <button id="loginBtn">Bağlan</button>
+  <div class="err" id="loginErr"></div>
+</section>
+
+<header id="header" class="hidden">
+  <img class="logo" src="icon.svg" alt="">
+  <div class="title">
+    <b>Arexi</b>
+    <small><span class="dot" id="dot"></span><span id="status">bağlanıyor…</span></small>
+  </div>
+  <button class="chip" id="modeChip">ask</button>
+  <button class="icon-btn" id="menuBtn" aria-label="Ayarlar">⚙︎</button>
+</header>
+
+<main id="log" class="hidden"></main>
+
+<footer id="footer" class="hidden">
+  <div class="composer">
+    <textarea id="input" rows="1" placeholder="Arexi'ye bir görev ver…" enterkeyhint="send"></textarea>
+    <button class="send" id="sendBtn" aria-label="Gönder">↑</button>
+  </div>
+</footer>
+
+<div class="sheet-bg hidden" id="sheetBg">
+  <div class="sheet" role="dialog" aria-label="Ayarlar">
+    <h3>Ayarlar</h3>
+    <label>İzin modu</label>
+    <div class="modes" id="modes"></div>
+    <label>Düşünme derinliği (effort)</label>
+    <div class="seg" id="efforts"></div>
+    <label for="modelInput">Model</label>
+    <input id="modelInput" style="width:100%" autocomplete="off" spellcheck="false">
+    <div class="toggle"><span>Düşünce özetlerini göster</span><input type="checkbox" id="thinkToggle"></div>
+    <button class="wide" id="clearBtn">🧹 Yeni oturum başlat</button>
+    <button class="wide danger" id="logoutBtn">Bağlantıyı unut</button>
+    <div class="info" id="info"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+  del(k) { try { localStorage.removeItem(k); } catch {} },
+};
+
+// Token: from the QR link (#t=...) or saved; the hash never reaches the server.
+let token = null;
+const hashToken = new URLSearchParams(location.hash.slice(1)).get("t");
+if (hashToken) { token = hashToken; store.set("arexi-token", hashToken); history.replaceState(null, "", location.pathname); }
+else token = store.get("arexi-token");
+
+let state = { busy: false, mode: "ask" };
+let streamAbort = null;
+
+const api = (path, body) => fetch(path, {
+  method: body === undefined ? "GET" : "POST",
+  headers: { authorization: "Bearer " + token, "content-type": "application/json" },
+  body: body === undefined ? undefined : JSON.stringify(body),
+});
+
+/* ---------- Markdown (small, safe: everything is escaped first) ---------- */
+const esc = (s) => s.replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+function inline(s) {
+  return esc(s)
+    .replace(/`([^`\n]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*\n]+)\*\*/g, "<b>$1</b>")
+    .replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<i>$2</i>")
+    .replace(/\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+}
+function markdown(src) {
+  const out = [];
+  const parts = src.split(/```/);
+  parts.forEach((part, i) => {
+    if (i % 2) { out.push("<pre><code>" + esc(part.replace(/^[\w+-]*\n/, "")) + "</code></pre>"); return; }
+    let list = null;
+    const close = () => { if (list) { out.push(`</${list}>`); list = null; } };
+    let para = [];
+    const flush = () => { if (para.length) { out.push("<p>" + para.map(inline).join("<br>") + "</p>"); para = []; } };
+    for (const line of part.split("\n")) {
+      let m;
+      if (!line.trim()) { flush(); close(); }
+      else if ((m = line.match(/^(#{1,3})\s+(.*)/))) { flush(); close(); out.push(`<h${m[1].length + 1}>${inline(m[2])}</h${m[1].length + 1}>`); }
+      else if ((m = line.match(/^\s*[-*]\s+(.*)/))) { flush(); if (list !== "ul") { close(); out.push("<ul>"); list = "ul"; } out.push("<li>" + inline(m[1]) + "</li>"); }
+      else if ((m = line.match(/^\s*\d+[.)]\s+(.*)/))) { flush(); if (list !== "ol") { close(); out.push("<ol>"); list = "ol"; } out.push("<li>" + inline(m[1]) + "</li>"); }
+      else { close(); para.push(line); }
+    }
+    flush(); close();
+  });
+  return out.join("");
+}
+
+/* ---------- Transcript rendering ---------- */
+const log = $("log");
+let current = null;     // { el, buf, kind } for streaming text/thinking
+const tools = new Map(); // tool id -> card
+let renderQueued = false;
+const nearBottom = () => log.scrollHeight - log.scrollTop - log.clientHeight < 120;
+const scroll = (force) => { if (force || nearBottom()) requestAnimationFrame(() => { log.scrollTop = log.scrollHeight; }); };
+
+function add(el) {
+  const stick = nearBottom();
+  log.querySelector(".empty")?.remove();
+  log.appendChild(el);
+  scroll(stick);
+  return el;
+}
+function div(cls, html) { const d = document.createElement("div"); d.className = cls; if (html !== undefined) d.innerHTML = html; return d; }
+
+function flushRender() {
+  renderQueued = false;
+  if (!current) return;
+  const stick = nearBottom();
+  if (current.kind === "text") current.el.innerHTML = markdown(current.buf);
+  else current.body.textContent = current.buf;
+  scroll(stick);
+}
+const queueRender = () => { if (!renderQueued) { renderQueued = true; requestAnimationFrame(flushRender); } };
+
+function showEmpty() {
+  log.innerHTML = "";
+  const e = div("empty", `<img class="logo" src="icon.svg" alt=""><div>Bilgisayarındaki Arexi hazır. Ne yapmamı istersin?</div>`);
+  const s = div("suggest");
+  for (const t of ["Bilgisayarın disk ve bellek durumunu özetle", "Masaüstündeki dosyaları listele", "Bu klasördeki projeyi incele ve ne olduğunu anlat"]) {
+    const b = document.createElement("button"); b.textContent = t; b.onclick = () => sendText(t); s.appendChild(b);
+  }
+  e.appendChild(s);
+  log.appendChild(e);
+}
+
+function permissionCard(ev, live) {
+  const card = div("msg perm");
+  card.dataset.id = ev.id;
+  const title = ev.kind === "exec" ? "Komut çalıştırmak istiyor" : "Dosya değiştirmek istiyor";
+  let preview = esc(ev.desc || "");
+  if (ev.name === "edit_file" && ev.input) {
+    preview = esc(ev.input.path || "") + "\n" +
+      `<span class="del">${esc(("- " + (ev.input.old_string || "")).split("\n").join("\n- ").slice(0, 1500))}</span>\n` +
+      `<span class="add">${esc(("+ " + (ev.input.new_string || "")).split("\n").join("\n+ ").slice(0, 1500))}</span>`;
+  } else if (ev.name === "write_file" && ev.input) {
+    preview = esc(ev.input.path || "") + "\n" + esc(String(ev.input.content || "").slice(0, 1500));
+  }
+  card.innerHTML = `<h4>🔐 ${title}</h4><pre>${preview}</pre>`;
+  const label = ev.kind === "exec" ? "komutlara" : "düzenlemelere";
+  const row = div("row");
+  const btn = (text, ans, cls) => { const b = document.createElement("button"); b.textContent = text; if (cls) b.className = cls; b.onclick = () => answer(ev.id, ans); return b; };
+  row.append(btn("İzin ver", "e", "yes"), btn("Reddet", "h"), btn(`Tüm ${label} izin ver`, "t"));
+  const note = div("note");
+  const inp = document.createElement("input"); inp.placeholder = "veya ne yapmasını istediğini yaz…";
+  const go = document.createElement("button"); go.className = "chip"; go.textContent = "Gönder";
+  go.onclick = () => inp.value.trim() && answer(ev.id, inp.value.trim());
+  inp.onkeydown = (e) => { if (e.key === "Enter") go.onclick(); };
+  note.append(inp, go);
+  card.append(row, note);
+  if (live && navigator.vibrate) navigator.vibrate(120);
+  return card;
+}
+
+function resolvePermission(id, ans) {
+  const card = log.querySelector(`.perm[data-id="${CSS.escape(id)}"]`);
+  const a = ans.toLowerCase();
+  const text = a === "e" ? "✓ İzin verildi" : a === "t" ? "✓ Hep izin verildi" : a === "h" ? "✗ Reddedildi" : "✎ Not: " + ans;
+  // Fold the answered request into its tool card so the output lands right below the command.
+  const tool = tools.get(id);
+  if (tool) {
+    card?.remove();
+    tool.querySelector(".tool-head").after(div("perm-done", esc(text)));
+    return;
+  }
+  if (!card) return;
+  card.querySelector(".row")?.remove();
+  card.querySelector(".note")?.remove();
+  card.appendChild(div("done", esc(text)));
+  card.style.borderColor = "var(--border)";
+}
+
+function handle(ev, live = true) {
+  switch (ev.type) {
+    case "user":
+      current = null;
+      add(div("msg user")).textContent = ev.text;
+      break;
+    case "text_start":
+      current = { kind: "text", buf: "", el: add(div("msg assistant")) };
+      break;
+    case "text":
+      if (!current || current.kind !== "text") handle({ type: "text_start" }, live);
+      current.buf += ev.text; queueRender();
+      break;
+    case "thinking_start": {
+      const d = document.createElement("details");
+      d.className = "msg thinking"; d.open = live;
+      d.innerHTML = "<summary>Düşünüyor…</summary>";
+      const body = document.createElement("div"); d.appendChild(body);
+      current = { kind: "thinking", buf: "", el: add(d), body };
+      break;
+    }
+    case "thinking":
+      if (!current || current.kind !== "thinking") handle({ type: "thinking_start" }, live);
+      current.buf += ev.text; queueRender();
+      break;
+    case "thinking_end":
+      if (current?.kind === "thinking") { flushRender(); current.el.open = false; current.el.querySelector("summary").textContent = "Düşündü"; }
+      current = null;
+      break;
+    case "text_end":
+      flushRender(); current = null;
+      break;
+    case "server_tool":
+      current = null;
+      add(div("msg chip-line", "🔎 " + esc(ev.name === "web_search" ? "web'de arıyor" : ev.name)));
+      break;
+    case "tool_start": {
+      current = null;
+      const card = div("msg tool run");
+      card.innerHTML = `<div class="tool-head"><span class="st"></span><span class="d"></span></div>`;
+      card.querySelector(".d").textContent = ev.desc;
+      tools.set(ev.id, card);
+      add(card);
+      break;
+    }
+    case "tool_output": {
+      const card = tools.get(ev.id); if (!card) break;
+      let pre = card.querySelector(":scope > pre");
+      if (!pre) { pre = document.createElement("pre"); card.appendChild(pre); }
+      pre.textContent += ev.text;
+      if (pre.textContent.length > 20000) pre.textContent = "…" + pre.textContent.slice(-15000);
+      pre.scrollTop = pre.scrollHeight;
+      scroll();
+      break;
+    }
+    case "tool_end": {
+      const card = tools.get(ev.id); if (!card) break;
+      card.classList.remove("run"); card.classList.add(ev.error ? "err" : "ok");
+      if (ev.denied) break;
+      if (ev.streamed) {
+        const last = ev.text.split("\n").pop();
+        const s = document.createElement("details"); s.innerHTML = `<summary>${esc(last)}</summary>`; card.appendChild(s);
+      } else if (ev.text) {
+        const d = document.createElement("details");
+        d.innerHTML = `<summary>çıktı (${ev.text.split("\n").length} satır)</summary>`;
+        const pre = document.createElement("pre"); pre.textContent = ev.text.slice(0, 20000); d.appendChild(pre);
+        card.appendChild(d);
+      }
+      break;
+    }
+    case "notice":
+      current = null;
+      add(div("msg notice " + (ev.level || ""))).textContent = ev.text;
+      break;
+    case "permission":
+      current = null;
+      add(permissionCard(ev, live));
+      break;
+    case "permission_resolved":
+      resolvePermission(ev.id, ev.answer);
+      break;
+    case "turn_end":
+      flushRender(); current = null;
+      break;
+    case "state":
+      applyState(ev);
+      break;
+    case "snapshot":
+      log.innerHTML = ""; tools.clear(); current = null;
+      for (const e of ev.events) handle(e, false);
+      flushRender();
+      // Unanswered permission requests from before stay answerable.
+      if (!ev.events.length) showEmpty();
+      applyState(ev.state);
+      scroll(true);
+      break;
+  }
+}
+
+/* ---------- State & settings ---------- */
+const MODE_LABEL = { ask: "Onaylı", "auto-edit": "Oto-düzenle", full: "TAM YETKİ" };
+function applyState(s) {
+  state = s;
+  $("modeChip").textContent = MODE_LABEL[s.mode] || s.mode;
+  $("modeChip").classList.toggle("full", s.mode === "full");
+  $("dot").className = "dot " + (s.busy ? "busy" : "on");
+  $("status").textContent = (s.busy ? "çalışıyor… · " : "bağlı · ") + (s.host || "") ;
+  const send = $("sendBtn");
+  send.classList.toggle("stop", s.busy);
+  send.textContent = s.busy ? "■" : "↑";
+  send.setAttribute("aria-label", s.busy ? "Durdur" : "Gönder");
+  renderSettings();
+}
+
+function renderSettings() {
+  const s = state;
+  if (!s.modes) return;
+  const modes = $("modes"); modes.innerHTML = "";
+  for (const [k, desc] of Object.entries(s.modes)) {
+    const b = document.createElement("button");
+    b.className = (k === s.mode ? "sel " : "") + (k === "full" ? "full" : "");
+    b.innerHTML = `<b>${esc(MODE_LABEL[k] || k)}</b><small>${esc(desc)}</small>`;
+    b.onclick = () => {
+      if (k === "full" && s.mode !== "full" && !confirm("Tam yetki modunda Arexi bilgisayarında komutları ve dosya değişikliklerini onay sormadan yapar. Açılsın mı?")) return;
+      api("/api/settings", { mode: k });
+    };
+    modes.appendChild(b);
+  }
+  const ef = $("efforts"); ef.innerHTML = "";
+  for (const e of s.efforts) {
+    const b = document.createElement("button"); b.textContent = e; if (e === s.effort) b.className = "sel";
+    b.onclick = () => api("/api/settings", { effort: e }); ef.appendChild(b);
+  }
+  if (document.activeElement !== $("modelInput")) $("modelInput").value = s.model;
+  $("thinkToggle").checked = !!s.showThinking;
+  const u = s.usage || {};
+  $("info").innerHTML = `Bilgisayar: <b>${esc(s.host || "")}</b><br>Dizin: <code>${esc(s.cwd || "")}</code><br>` +
+    `Token: ${u.input || 0} girdi · ${u.output || 0} çıktı · ${u.cacheRead || 0} önbellek` +
+    (s.cost != null ? `<br>Tahmini maliyet: $${s.cost.toFixed(4)}` : "");
+}
+
+$("modelInput").onchange = (e) => api("/api/settings", { model: e.target.value.trim() });
+$("thinkToggle").onchange = (e) => api("/api/settings", { showThinking: e.target.checked });
+$("menuBtn").onclick = $("modeChip").onclick = () => $("sheetBg").classList.remove("hidden");
+$("sheetBg").onclick = (e) => { if (e.target === $("sheetBg")) $("sheetBg").classList.add("hidden"); };
+$("clearBtn").onclick = async () => {
+  if (state.busy) return alert("Arexi şu an çalışıyor. Önce durdur.");
+  if (!confirm("Mevcut konuşma kapatılıp yeni oturum başlatılsın mı?")) return;
+  await api("/api/clear", {}); $("sheetBg").classList.add("hidden");
+};
+$("logoutBtn").onclick = () => { if (confirm("Bu cihazdaki erişim anahtarı silinsin mi?")) { store.del("arexi-token"); location.reload(); } };
+
+/* ---------- Actions ---------- */
+async function sendText(text) {
+  text = text.trim(); if (!text) return;
+  const r = await api("/api/message", { text });
+  if (r.status === 409) alert("Arexi şu an başka bir görevle meşgul.");
+}
+function answer(id, ans) { api("/api/permission", { id, answer: ans }); }
+
+const input = $("input");
+const grow = () => { input.style.height = "auto"; input.style.height = Math.min(input.scrollHeight, 160) + "px"; };
+input.addEventListener("input", grow);
+input.addEventListener("keydown", (e) => {
+  // Enter sends on desktop keyboards; on phones Enter adds a newline and the button sends.
+  if (e.key === "Enter" && !e.shiftKey && !("ontouchstart" in window)) { e.preventDefault(); $("sendBtn").click(); }
+});
+$("sendBtn").onclick = () => {
+  if (state.busy) { api("/api/stop", {}); return; }
+  const t = input.value; if (!t.trim()) return;
+  input.value = ""; grow(); sendText(t);
+};
+
+/* ---------- Event stream (NDJSON over fetch, auto-reconnect) ---------- */
+async function connect() {
+  let delay = 1000;
+  for (;;) {
+    streamAbort = new AbortController();
+    try {
+      const res = await fetch("/api/events", { headers: { authorization: "Bearer " + token }, signal: streamAbort.signal, cache: "no-store" });
+      if (res.status === 401) { store.del("arexi-token"); showLogin("Erişim anahtarı geçersiz."); return; }
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      delay = 1000;
+      const reader = res.body.getReader();
+      const dec = new TextDecoder();
+      let buf = "";
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+        let i;
+        while ((i = buf.indexOf("\n")) >= 0) {
+          const lineStr = buf.slice(0, i); buf = buf.slice(i + 1);
+          if (lineStr) handle(JSON.parse(lineStr));
+        }
+      }
+    } catch (e) { /* fall through to reconnect */ }
+    $("dot").className = "dot"; $("status").textContent = "bağlantı koptu, yeniden deneniyor…";
+    await new Promise((r) => setTimeout(r, delay));
+    delay = Math.min(delay * 2, 15000);
+  }
+}
+// Phones suspend background tabs; reconnect right away when the app comes back.
+document.addEventListener("visibilitychange", () => { if (!document.hidden && streamAbort) streamAbort.abort(); });
+
+/* ---------- Login ---------- */
+function showLogin(msg) {
+  for (const id of ["header", "log", "footer"]) $(id).classList.add("hidden");
+  $("login").classList.remove("hidden");
+  $("loginErr").textContent = msg || "";
+}
+function showApp() {
+  $("login").classList.add("hidden");
+  for (const id of ["header", "log", "footer"]) $(id).classList.remove("hidden");
+  connect();
+}
+$("loginBtn").onclick = async () => {
+  const t = $("tokenInput").value.trim(); if (!t) return;
+  token = t;
+  const r = await fetch("/api/settings", { method: "POST", headers: { authorization: "Bearer " + t, "content-type": "application/json" }, body: "{}" }).catch(() => null);
+  if (!r || !r.ok) { $("loginErr").textContent = r ? "Anahtar yanlış." : "Bilgisayara ulaşılamadı."; return; }
+  store.set("arexi-token", t); showApp();
+};
+$("tokenInput").onkeydown = (e) => { if (e.key === "Enter") $("loginBtn").click(); };
+
+if (token) showApp(); else showLogin();
+if ("serviceWorker" in navigator && window.isSecureContext) navigator.serviceWorker.register("sw.js").catch(() => {});
+</script>
+</body>
+</html>

@@ -10,7 +10,7 @@ export const SESSIONS_DIR = path.join(AREXI_HOME, "sessions");
 export const MODES = {
   ask: "Her dosya yazımı ve komut için onay ister",
   "auto-edit": "Dosya düzenlemelerini otomatik yapar, komutlar için onay ister",
-  full: "TAM YETKİ — hiçbir şey için onay istemez",
+  full: "Tam yetki: hiçbir şey için onay istemez",
 };
 
 export const EFFORTS = ["low", "medium", "high", "xhigh", "max"];

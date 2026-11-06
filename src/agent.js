@@ -4,7 +4,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { SESSIONS_DIR } from "./config.js";
 import { buildSystemPrompt } from "./prompt.js";
 import { TOOLS, runTool, toolDefinitions } from "./tools.js";
-import { c, describeTool, line, out, truncate } from "./ui.js";
+import { describeTool } from "./ui.js";
 
 /** $ per million tokens, for the /cost estimate. */
 const PRICES = {
@@ -16,12 +16,15 @@ const PRICES = {
 
 export class Agent {
   /**
-   * @param {object} cfg   config from loadConfig()
-   * @param {object} io    { ask(question): Promise<string> } for permission prompts
+   * @param {object} cfg  config from loadConfig()
+   * @param {object} io   front-end hooks (terminal or phone app):
+   *   emit(event)                  — stream of UI events (text, thinking, tool_start, tool_output, tool_end, notice…)
+   *   askPermission(request)       — resolves to the user's answer: "e" | "h" | "t" | free text
    */
   constructor(cfg, io) {
     this.cfg = cfg;
     this.io = io;
+    this.emit = (ev) => io.emit?.(ev);
     this.client = new Anthropic();
     this.ctx = { cwd: process.cwd(), cfg, todos: [] };
     this.messages = [];
@@ -67,33 +70,31 @@ export class Agent {
   /** Stream one model response, printing text/thinking live. Returns the final message. */
   async streamOnce(signal) {
     const stream = this.client.beta.messages.stream(this.buildRequest(), { signal });
-    let mode = null; // which kind of block is currently printing
+    let mode = null; // which kind of block is currently streaming
     for await (const ev of stream) {
       if (ev.type === "content_block_start") {
         const t = ev.content_block.type;
+        mode = null;
         if (t === "thinking" && this.cfg.showThinking) {
-          out(c.gray("\n✻ "));
+          this.emit({ type: "thinking_start" });
           mode = "thinking";
         } else if (t === "text") {
-          if (mode !== "text") out("\n");
+          this.emit({ type: "text_start" });
           mode = "text";
         } else if (t === "server_tool_use") {
-          out(c.cyan(`\n⏺ ${ev.content_block.name}`));
-          mode = null;
+          this.emit({ type: "server_tool", name: ev.content_block.name });
         } else if (t === "compaction") {
-          out(c.gray("\n(… bağlam özetleniyor …)"));
-          mode = null;
+          this.emit({ type: "notice", level: "info", text: "bağlam özetleniyor…" });
         }
       } else if (ev.type === "content_block_delta") {
-        if (ev.delta.type === "text_delta") out(ev.delta.text);
-        else if (ev.delta.type === "thinking_delta" && this.cfg.showThinking) out(c.gray(ev.delta.thinking));
-      } else if (ev.type === "content_block_stop" && mode === "thinking") {
-        out("\n");
+        if (ev.delta.type === "text_delta") this.emit({ type: "text", text: ev.delta.text });
+        else if (ev.delta.type === "thinking_delta" && mode === "thinking") this.emit({ type: "thinking", text: ev.delta.thinking });
+      } else if (ev.type === "content_block_stop" && mode) {
+        this.emit({ type: `${mode}_end` });
         mode = null;
       }
     }
     const msg = await stream.finalMessage();
-    out("\n");
     const u = msg.usage ?? {};
     this.usage.input += u.input_tokens ?? 0;
     this.usage.output += u.output_tokens ?? 0;
@@ -103,7 +104,7 @@ export class Agent {
   }
 
   /** Ask the user whether a tool call may run. Returns { ok, note }. */
-  async permit(name, input) {
+  async permit(id, name, input) {
     const kind = TOOLS[name]?.kind;
     const mode = this.cfg.mode;
     if (!kind || kind === "read") return { ok: true };
@@ -111,14 +112,7 @@ export class Agent {
     if (kind === "edit" && mode === "auto-edit") return { ok: true };
     if (this.alwaysAllow.has(kind)) return { ok: true };
 
-    if (name === "edit_file") {
-      line(c.red(truncate("- " + input.old_string.split("\n").join("\n- "), 1200)));
-      line(c.green(truncate("+ " + input.new_string.split("\n").join("\n+ "), 1200)));
-    } else if (name === "write_file") {
-      line(c.gray(truncate(input.content, 800)));
-    }
-    const label = kind === "exec" ? "komutlar" : "dosya düzenlemeleri";
-    const ans = (await this.io.ask(c.yellow(`İzin veriyor musun? [e]vet / [h]ayır / [t]üm ${label} için evet / ya da ne yapmamı istediğini yaz: `))).trim();
+    const ans = String((await this.io.askPermission({ id, name, kind, input, desc: describeTool(name, input) })) ?? "").trim();
     const a = ans.toLowerCase();
     if (["e", "evet", "y", "yes", ""].includes(a)) return { ok: true };
     if (["t", "tümü", "tumu", "a", "always"].includes(a)) {
@@ -134,20 +128,19 @@ export class Agent {
     const allRead = blocks.every((b) => TOOLS[b.name]?.kind === "read");
     const runOne = async (b) => {
       if (signal.aborted) return { type: "tool_result", tool_use_id: b.id, is_error: true, content: "Kullanıcı tarafından durduruldu." };
-      line(c.cyan(`⏺ ${truncate(describeTool(b.name, b.input), 300)}`));
-      const perm = await this.permit(b.name, b.input ?? {});
+      this.emit({ type: "tool_start", id: b.id, name: b.name, desc: describeTool(b.name, b.input) });
+      const perm = await this.permit(b.id, b.name, b.input ?? {});
       if (!perm.ok) {
         const msg = "Kullanıcı bu işlemi reddetti." + (perm.note ? ` Kullanıcının notu: ${perm.note}` : "");
-        line(c.red("  ✗ reddedildi"));
+        this.emit({ type: "tool_end", id: b.id, error: true, denied: true, text: "reddedildi" });
         return { type: "tool_result", tool_use_id: b.id, is_error: true, content: msg };
       }
       const streamOut = b.name === "bash" && !allRead;
       // Tools share this.ctx so a `cd` in bash carries over to later calls.
       this.ctx.signal = signal;
-      this.ctx.onOutput = streamOut ? (s) => out(c.gray(s)) : undefined;
+      this.ctx.onOutput = streamOut ? (text) => this.emit({ type: "tool_output", id: b.id, text }) : undefined;
       const res = await runTool(b.name, b.input ?? {}, this.ctx);
-      if (!streamOut) line(c.gray("  ⎿ " + truncate(res.text.replace(/\n/g, "\n    "), 500)));
-      else line(c.gray(`  ⎿ ${res.text.split("\n").pop()}`));
+      this.emit({ type: "tool_end", id: b.id, error: !!res.error, streamed: streamOut, text: res.text });
       return { type: "tool_result", tool_use_id: b.id, is_error: !!res.error, content: res.text };
     };
     if (allRead) return Promise.all(blocks.map(runOne));
@@ -168,27 +161,27 @@ export class Agent {
         } catch (err) {
           // With eager input streaming, unparseable tool JSON rejects the stream; re-issue a couple of times.
           if (err instanceof Anthropic.APIError || signal.aborted || jsonRetries++ >= 2) throw err;
-          line(c.yellow("(araç girdisi okunamadı, tekrar deneniyor)"));
+          this.emit({ type: "notice", level: "warn", text: "araç girdisi okunamadı, tekrar deneniyor" });
           continue;
         }
 
         if (msg.stop_reason === "refusal") {
           this.messages.push({ role: "assistant", content: msg.content });
           const d = msg.stop_details;
-          line(c.red(`Model bu isteği reddetti${d?.category ? ` (${d.category})` : ""}.${d?.explanation ? " " + d.explanation : ""}`));
+          this.emit({ type: "notice", level: "error", text: `Model bu isteği reddetti${d?.category ? ` (${d.category})` : ""}.${d?.explanation ? " " + d.explanation : ""}` });
           return;
         }
 
         this.messages.push({ role: "assistant", content: msg.content });
         if (msg.stop_reason === "pause_turn" || msg.stop_reason === "compaction") continue;
         if (msg.stop_reason === "model_context_window_exceeded") {
-          line(c.yellow("(bağlam penceresi doldu — /clear ile yeni oturum başlatabilirsin)"));
+          this.emit({ type: "notice", level: "warn", text: "bağlam penceresi doldu — yeni oturum başlatabilirsin" });
           return;
         }
 
         const toolUses = msg.content.filter((b) => b.type === "tool_use");
         if (toolUses.length === 0) {
-          if (msg.stop_reason === "max_tokens") line(c.yellow("(yanıt max_tokens sınırında kesildi)"));
+          if (msg.stop_reason === "max_tokens") this.emit({ type: "notice", level: "warn", text: "yanıt max_tokens sınırında kesildi" });
           return;
         }
 
