@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#4f46e5">
+  <meta name="description" content="Yapay zekâ hocalarla ders programı: duygulu yüzler, canlı sesli ders, günlük soru limiti.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Sınıfım">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>Sınıfım — Yapay Zekâ Hocalar</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app">
+    <nav class="nav">
+      <div class="brand"><span class="logo">🎓</span><b>Sınıfım</b></div>
+      <button data-view="home"><span>🏠</span><small>Ana sayfa</small></button>
+      <button data-view="schedule"><span>📅</span><small>Program</small></button>
+      <button data-view="teachers"><span>🧑‍🏫</span><small>Hocalar</small></button>
+      <button data-view="settings"><span>⚙️</span><small>Ayarlar</small></button>
+    </nav>
+    <main id="view"></main>
+  </div>
+  <div id="toasts"></div>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
