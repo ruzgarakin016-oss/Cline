@@ -58,8 +58,28 @@ export function parseReply(raw) {
   };
 }
 
+// claude.ai içinde link olarak açılınca: API anahtarı gerekmez, kullanıcının Claude hesabı kullanılır.
+let sampleFn = null;
+export const aiReady = (async () => {
+  try { if (window.claude && window.claude.use) sampleFn = await window.claude.use('sample'); } catch { sampleFn = null; }
+  return !!sampleFn;
+})();
+export const hasAI = settings => !!settings.apiKey.trim() || !!sampleFn;
+
+async function askViaClaudeApp(system, messages) {
+  const input = messages.map((m, i) => i === 0 ? { ...m, content: `TALİMATLAR (rolünü bunlara göre oyna):\n${system}\n\n---\n${m.content}` } : m);
+  try {
+    const { text } = await sampleFn(input, { modelTier: 'quick', cache: false });
+    return parseReply(text);
+  } catch (e) {
+    if (e && e.code === 'not_granted') sampleFn = null;
+    throw new Error(e && e.message ? e.message : 'Claude yanıt vermedi');
+  }
+}
+
 export async function askTeacher(settings, teacher, history, ctx) {
   const messages = normalizeMessages(history);
+  if (!settings.apiKey.trim() && sampleFn) return askViaClaudeApp(systemPrompt(teacher, { ...ctx, strictness: settings.strictness }), messages);
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {

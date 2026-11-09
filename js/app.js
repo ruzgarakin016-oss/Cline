@@ -2,7 +2,7 @@ import { Face, EMOTION_KEYS, EMOTIONS } from './face.js';
 import { TEACHERS, teacherById } from './teachers.js';
 import * as S from './storage.js';
 import { mountClassroom, baseEmotion } from './classroom.js';
-import { testKey } from './ai.js';
+import { testKey, aiReady, hasAI } from './ai.js';
 import { LINES } from './offline.js';
 import { speak, unlockAudio } from './speech.js';
 
@@ -76,7 +76,7 @@ function home() {
     <header class="page-head">
       <div><h1>${hello}${st.name ? ', ' + esc(st.name) : ''} 👋</h1>
       <p class="muted">${new Date().toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' })}</p></div>
-      ${st.apiKey ? '<span class="tag ok">🤖 Yapay zekâ açık</span>' : '<button class="tag warn" data-go="settings">⚙️ Yapay zekâ anahtarı ekle</button>'}
+      ${hasAI(st) ? '<span class="tag ok">🤖 Yapay zekâ açık</span>' : '<button class="tag warn ai-tag" data-go="settings">⚙️ Yapay zekâ anahtarı ekle</button>'}
     </header>
     <div class="home-grid">
       <section class="card hero" style="--tc:${ft ? ft.color : '#64748b'}">
@@ -118,6 +118,7 @@ function home() {
       </section>
     </div>
   </div>`;
+  aiReady.then(ok => { const tg = view.querySelector('.ai-tag'); if (ok && tg) tg.outerHTML = '<span class="tag ok">🤖 Yapay zekâ açık</span>'; });
   const heroT = ft || TEACHERS[new Date().getDate() % TEACHERS.length];
   mountFace(view.querySelector('.hero-face'), heroT, ft ? (now ? 'kizgin' : baseEmotion(S.getMood(ft.id))) : 'cok_mutlu');
   view.querySelectorAll('.mini.face').forEach(el => {

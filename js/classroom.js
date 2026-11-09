@@ -2,7 +2,7 @@
 import { Face, EMOTIONS, normalizeEmotion } from './face.js';
 import { teacherById } from './teachers.js';
 import * as S from './storage.js';
-import { askTeacher } from './ai.js';
+import { askTeacher, aiReady, hasAI } from './ai.js';
 import { OfflineTeacher, LINES } from './offline.js';
 import { speak, stopSpeaking, Listener, unlockAudio } from './speech.js';
 
@@ -21,7 +21,7 @@ export function mountClassroom(root, teacherId, { toast, go }) {
   let history = S.getHistory(t.id);
   let mood = S.getMood(t.id);
   const offline = new OfflineTeacher(t, settings.strictness);
-  const useAI = () => !!settings.apiKey.trim();
+  const useAI = () => hasAI(settings);
   let busy = false, speaking = false, liveMode = false, destroyed = false;
   let awaiting = false, strikes = 0, timer = null, timeLeft = 0, warned = false, revertTimer = null;
   let voiceOn = settings.voice;
@@ -31,7 +31,7 @@ export function mountClassroom(root, teacherId, { toast, go }) {
     <div class="stage">
       <div class="board">
         <div class="board-subject">${t.icon} ${esc(t.subject)}</div>
-        <div class="board-sub">${esc(t.name)} · ${useAI() ? 'Yapay zekâ' : 'Çevrimdışı mod'}</div>
+        <div class="board-sub">${esc(t.name)} · <span class="ai-mode">…</span></div>
       </div>
       <div class="live-badge" hidden>● CANLI</div>
       <button class="face-btn" aria-label="Hocayı sustur"><div class="face big"></div></button>
@@ -144,6 +144,9 @@ export function mountClassroom(root, teacherId, { toast, go }) {
     face.setEmotion('dusunceli');
     typing(true);
     let reply;
+    await aiReady;
+    if (destroyed) return;
+    $('.ai-mode').textContent = useAI() ? 'Yapay zekâ' : 'Çevrimdışı mod';
     const u = S.getUsage();
     const ctx = { name: settings.name, grade: settings.grade, mood, limit: settings.dailyLimit, used: u.used };
     if (useAI()) {
