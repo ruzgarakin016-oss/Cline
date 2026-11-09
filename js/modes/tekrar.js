@@ -5,6 +5,7 @@ import { topicPicker } from '../topics.js';
 import { runQuiz } from '../quiz.js';
 import { addResult } from '../storage.js';
 import { esc, rich, needAI, errorBox } from '../ui.js';
+import { addXP, stat } from '../progress.js';
 
 export function mountTekrar(el, { t, stage }) {
   let dead = false, quiz = null;
@@ -58,6 +59,7 @@ export function mountTekrar(el, { t, stage }) {
   async function check(cards, topic) {
     el.innerHTML = `<div class="loading"><div class="spinner"></div><b>Kontrol testi hazırlanıyor…</b></div>`;
     stage.react('tekrar');
+    addXP(20, 'Tekrar kartları', t.id); stat('tekrar');
     stage.think(true);
     try {
       const j = await llmJSON({ system: quizSystem(t, { count: 5, topic: cards.map(c => c.baslik).join(', '), level: 'orta' }), tier: 'default', messages: [{ role: 'user', content: 'Soruları hazırla.' }] });

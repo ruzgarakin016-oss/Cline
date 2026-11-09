@@ -4,6 +4,9 @@ import { quizSystem } from '../prompts.js';
 import { topicPicker } from '../topics.js';
 import { addResult, getResults, getSettings, isHighSchool } from '../storage.js';
 import { esc, rich, LETTERS, letterOf, needAI, errorBox } from '../ui.js';
+import { addXP, stat, recordAnswer } from '../progress.js';
+import { addMistake } from '../mistakes.js';
+import { SFX } from '../voice.js';
 
 export function mountDeneme(el, { t, stage, switchTab }) {
   let dead = false, timer = null;
@@ -100,6 +103,9 @@ export function mountDeneme(el, { t, stage, switchTab }) {
     const div = isHighSchool(getSettings().grade) ? 4 : 3;
     const net = Math.max(0, +(d - y / div).toFixed(2));
     const score = Math.round(net / qs.length * 100);
+    qs.forEach((q, i) => { if (picks[i]) { recordAnswer(t.id, q.konu, picks[i] === q.dogru); if (picks[i] !== q.dogru) addMistake(q, t.id); } else addMistake(q, t.id); });
+    stat('denemes'); if (score === 100) stat('perfect');
+    addXP(30 + Math.round(score / 2), 'Deneme bitti', t.id); SFX.level();
     addResult({ type: 'deneme', teacher: t.id, subject: t.subject, topic, correct: d, wrong: y, blank: b, net, score, total: qs.length });
     const ev = score >= 75 ? 'deneme_iyi' : score >= 45 ? 'deneme_orta' : 'deneme_kotu';
     const r = stage.react(ev, 10000);

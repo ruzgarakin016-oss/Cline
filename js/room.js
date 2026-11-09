@@ -1,23 +1,27 @@
-// Hoca odası: solda robot hoca, sağda sekmeler (Ders, Soru Sor, Soru Çöz, Deneme, Yazılı, Tekrar).
+// HOCA ODASI: solda robot hoca, sağda bölümler.
 import { teacherById } from './teachers.js';
 import { createStage } from './stage.js';
 import { getSettings, remaining } from './storage.js';
-import { unlockAudio } from './speech.js';
+import { unlockAudio } from './voice.js';
 import { esc } from './ui.js';
 import { mountDers } from './modes/ders.js';
 import { mountSor } from './modes/sor.js';
+import { mountTahta } from './modes/tahta.js';
 import { mountCoz } from './modes/coz.js';
 import { mountDeneme } from './modes/deneme.js';
 import { mountYazili } from './modes/yazili.js';
 import { mountTekrar } from './modes/tekrar.js';
+import { mountKarne } from './modes/karne.js';
 
 export const TABS = [
-  ['ders', '💬', 'Ders', mountDers],
+  ['ders', '💬', 'Sohbet', mountDers],
   ['sor', '📷', 'Soru Sor', mountSor],
+  ['tahta', '✍️', 'Tahta', mountTahta],
   ['coz', '✏️', 'Soru Çöz', mountCoz],
   ['deneme', '📝', 'Deneme', mountDeneme],
   ['yazili', '🗒️', 'Yazılı', mountYazili],
   ['tekrar', '🔁', 'Tekrar', mountTekrar],
+  ['karne', '📊', 'Karne', mountKarne],
 ];
 
 export function mountRoom(root, teacherId, tab, { go }) {
@@ -29,8 +33,8 @@ export function mountRoom(root, teacherId, tab, { go }) {
       <header class="room-head">
         <button class="icon-btn back" aria-label="Geri">←</button>
         <div class="rh-title"><b>${t.icon} ${esc(t.name)}</b><small>${esc(t.subject)} · ${esc(t.tagline)}</small></div>
-        <span class="limit-pill"></span>
-        <button class="icon-btn voice" aria-label="Ses"></button>
+        <span class="limit-pill" title="Günlük soru hakkı"></span>
+        <button class="icon-btn voice" aria-label="Ses aç/kapat"></button>
       </header>
       <nav class="tabs">${TABS.map(([k, ic, label]) => `<button data-tab="${k}"><span>${ic}</span>${label}</button>`).join('')}</nav>
       <div class="room-body"></div>
@@ -38,6 +42,7 @@ export function mountRoom(root, teacherId, tab, { go }) {
   </section>`;
   const $ = s => root.querySelector(s);
   const stage = createStage($('.room-stage'), t);
+  stage.setVoice(getSettings().voice);
   let current = null, curTab = null;
 
   const pill = () => {
@@ -55,10 +60,11 @@ export function mountRoom(root, teacherId, tab, { go }) {
     stage.stop();
     curTab = k;
     root.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === k));
+    const act = root.querySelector('.tabs button.active'); act && act.scrollIntoView({ inline: 'center', block: 'nearest' });
     const body = $('.room-body');
     body.scrollTop = 0;
-    const mount = TABS.find(x => x[0] === k)[3];
-    current = mount(body, { t, stage, go, switchTab });
+    body.dataset.tab = k;
+    current = TABS.find(x => x[0] === k)[3](body, { t, stage, go, switchTab });
     history.replaceState(null, '', `#room/${t.id}/${k}`);
   }
   root.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => { unlockAudio(); switchTab(b.dataset.tab); }));

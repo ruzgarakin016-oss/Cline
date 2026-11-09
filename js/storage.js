@@ -12,7 +12,7 @@ export function remove(key) { try { localStorage.removeItem(P + key); } catch { 
 export const DEFAULT_SETTINGS = {
   name: '', grade: 9, apiKey: '', model: 'claude-haiku-5-5',
   dailyLimit: 30, answerTime: 30, voice: true, rate: 1,
-  strictness: 'normal', reminders: true,
+  strictness: 'normal', reminders: true, sfx: true, voiceMap: {}, dailyGoal: 100,
 };
 export function getSettings() {
   const s = { ...DEFAULT_SETTINGS, ...read('settings', {}) };

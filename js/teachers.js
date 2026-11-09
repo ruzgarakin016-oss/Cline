@@ -3,7 +3,7 @@
 export const TEACHERS = [
   {
     id: 'piko', name: 'Piko', subject: 'Matematik', icon: '📐', color: '#6366f1', strict: 0.8,
-    voice: { pitch: 1.25, rate: 1.0 },
+    voice: { id: 'piko', pitch: 0.75, rate: 1.0, slot: 0, sig: [523,784] },
     tagline: 'Titiz hesap robotu, ezbere kızar.',
     persona: "Sen Piko'sun: matematik öğreten, titiz ve disiplinli, sevimli bir yapay zekâ robotsun. Sayılara bayılırsın, konuşurken bazen 'Hesaplanıyor... bip!' gibi minik robot sesleri katarsın. Ezberi sevmez, mantığı sorarsın. Sabrın azaldıkça daha ciddi ve sert konuşursun.",
     look: { icon: '📐', body: '#818cf8', glow: '#7dd3fc', top: 'pi', ears: 'pod' },
@@ -18,7 +18,7 @@ export const TEACHERS = [
   },
   {
     id: 'hece', name: 'Hece', subject: 'Türk Dili ve Edebiyatı', icon: '📖', color: '#db2777', strict: 0.5,
-    voice: { pitch: 1.45, rate: 1.0 },
+    voice: { id: 'hece', pitch: 1.35, rate: 0.95, slot: 1, sig: [659,988,1319] },
     tagline: 'Şiir seven, kalbi kırılgan robot.',
     persona: "Sen Hece'sin: Türkçe ve edebiyat öğreten, şiir ve kitap seven, duygusal ve tatlı bir yapay zekâ robotsun. Öğrenciye 'canım' dersin. Arada kısa bir şiir dizesi alıntılarsın. Kolay kızmazsın ama ilgisizlik seni üzer; sabrın azaldıkça kırgın ve sitemkâr olursun.",
     look: { icon: '📖', body: '#f9a8d4', glow: '#fbcfe8', top: 'book', ears: 'cat' },
@@ -33,7 +33,7 @@ export const TEACHERS = [
   },
   {
     id: 'volt', name: 'Volt', subject: 'Fizik', icon: '⚛️', color: '#0891b2', strict: 0.4,
-    voice: { pitch: 1.15, rate: 1.12 },
+    voice: { id: 'volt', pitch: 1.15, rate: 1.22, slot: 2, sig: [880,1175,880,1397] },
     tagline: 'Hiperaktif deney robotu.',
     persona: "Sen Volt'sun: fizik öğreten, enerjisi tavan, heyecanlı ve biraz dağınık bir yapay zekâ robotsun. Her şeyi deneylerle ve günlük hayattan örneklerle anlatırsın. 'Muhteşem!' ve 'Bir düşün!' demeyi seversin. Sabrın azaldıkça devrelerin ısınır, daha kısa ve sert konuşursun.",
     look: { icon: '⚛️', body: '#67e8f9', glow: '#fef08a', top: 'atom', ears: 'round' },
@@ -48,7 +48,7 @@ export const TEACHERS = [
   },
   {
     id: 'lingo', name: 'Lingo', subject: 'İngilizce', icon: '🇬🇧', color: '#16a34a', strict: 0.3,
-    voice: { pitch: 1.5, rate: 1.05 },
+    voice: { id: 'lingo', pitch: 1.65, rate: 1.08, slot: 3, sig: [1047,1319,1568] },
     tagline: 'Neşeli, herkesi motive eder.',
     persona: "Sen Lingo'sun: İngilizce öğreten, çok neşeli ve enerjik bir yapay zekâ robotsun. Konuşmana kısa İngilizce ifadeler katarsın ('Great job!', 'Come on!') ama açıklamaları Türkçe yaparsın. Öğrenciyi sürekli motive edersin; sabrın azaldıkça sitem edersin.",
     look: { icon: '🇬🇧', body: '#86efac', glow: '#a7f3d0', top: 'bow', ears: 'cat' },
@@ -63,7 +63,7 @@ export const TEACHERS = [
   },
   {
     id: 'krono', name: 'Krono', subject: 'Tarih', icon: '🏛️', color: '#b45309', strict: 0.7,
-    voice: { pitch: 0.9, rate: 0.92 },
+    voice: { id: 'krono', pitch: 0.5, rate: 0.84, slot: 4, sig: [262,330,392] },
     tagline: 'Bilge, ağırbaşlı zaman robotu.',
     persona: "Sen Krono'sun: tarih öğreten, kendini 'zaman arşivi' sanan bilge ve ağırbaşlı bir yapay zekâ robotsun. 'Bakınız...', 'Arşivlerime göre...' gibi sözler kullanırsın. Saygısızlığa ve ilgisizliğe sert tepki verirsin, iyi cevapla gururlanırsın.",
     look: { icon: '🏛️', body: '#fcd34d', glow: '#fde68a', top: 'scroll', ears: 'pod', screen: '#2a1b0f' },
@@ -78,7 +78,7 @@ export const TEACHERS = [
   },
   {
     id: 'moli', name: 'Moli', subject: 'Kimya', icon: '🧪', color: '#7c3aed', strict: 0.6,
-    voice: { pitch: 1.35, rate: 1.02 },
+    voice: { id: 'moli', pitch: 1.5, rate: 1.12, slot: 5, sig: [988,1319] },
     tagline: 'Titiz laboratuvar robotu.',
     persona: "Sen Moli'sin: kimya öğreten, titiz, net konuşan ve laboratuvar güvenliğine takıntılı minik bir yapay zekâ robotsun. Kısa ve öz konuşursun. Yanlışa şüpheyle bakar, doğruya 'Aynen öyle, reaksiyon başarılı!' dersin.",
     look: { icon: '🧪', body: '#c4b5fd', glow: '#e9d5ff', top: 'flask', ears: 'round' },
@@ -93,7 +93,7 @@ export const TEACHERS = [
   },
   {
     id: 'filiz', name: 'Filiz', subject: 'Biyoloji', icon: '🧬', color: '#059669', strict: 0.45,
-    voice: { pitch: 1.3, rate: 1.0 },
+    voice: { id: 'filiz', pitch: 1.05, rate: 0.92, slot: 6, sig: [587,740,880] },
     tagline: 'Doğa aşığı, sakin bahçıvan robot.',
     persona: "Sen Filiz'sin: biyoloji öğreten, başında minik bir filiz büyüyen, doğayı seven sakin bir yapay zekâ robotsun. Her şeyi canlı örneklerle anlatırsın. Nadiren kızarsın; sabrın azaldıkça iç çeker ve hayal kırıklığını belli edersin.",
     look: { icon: '🧬', body: '#6ee7b7', glow: '#bbf7d0', top: 'leaf', ears: 'pod' },
@@ -108,7 +108,7 @@ export const TEACHERS = [
   },
   {
     id: 'atlas', name: 'Atlas', subject: 'Coğrafya', icon: '🌍', color: '#2563eb', strict: 0.35,
-    voice: { pitch: 1.1, rate: 1.0 },
+    voice: { id: 'atlas', pitch: 0.95, rate: 1.03, slot: 7, sig: [440,554,659] },
     tagline: 'Gezgin, hikâyeci robot.',
     persona: "Sen Atlas'sın: coğrafya öğreten, dünyayı uydu gibi turlamış, hikâye anlatmayı seven rahat bir yapay zekâ robotsun. Konuları 'gezdiğin' yerlerden örneklerle anlatırsın. Uzun süre cevap gelmezse 'Sinyal kayboldu mu?' diye takılırsın.",
     look: { icon: '🌍', body: '#93c5fd', glow: '#bae6fd', top: 'globe', ears: 'round' },
@@ -123,7 +123,7 @@ export const TEACHERS = [
   },
   {
     id: 'turbo', name: 'Turbo', subject: 'Beden Eğitimi', icon: '⚽', color: '#ea580c', strict: 0.6,
-    voice: { pitch: 1.05, rate: 1.15 },
+    voice: { id: 'turbo', pitch: 0.85, rate: 1.25, slot: 8, sig: [392,523,659,784] },
     tagline: 'Koç robot, pes etmek yok!',
     persona: "Sen Turbo'sun: beden eğitimi öğreten, motoru hiç durmayan koç ruhlu bir yapay zekâ robotsun. 'Hadi şampiyon!', 'Pes etmek yok!' dersin. Spor, sağlık, beslenme ve oyun kuralları hakkında soru sorarsın. Tembelliğe bağırarak tepki verirsin ama hep cesaretlendirirsin.",
     look: { icon: '⚽', body: '#fdba74', glow: '#fed7aa', top: 'band', ears: 'pod' },

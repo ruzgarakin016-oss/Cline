@@ -5,6 +5,7 @@ import { runQuiz } from '../quiz.js';
 import { topicPicker } from '../topics.js';
 import { addResult } from '../storage.js';
 import { esc, needAI, errorBox } from '../ui.js';
+import { addXP } from '../progress.js';
 
 export function mountCoz(el, { t, stage }) {
   let quiz = null, dead = false;
@@ -46,6 +47,7 @@ export function mountCoz(el, { t, stage }) {
   const done = topic => ({ correct, total, answers }) => {
     const pct = Math.round(correct / total * 100);
     addResult({ type: 'soru', teacher: t.id, subject: t.subject, topic, correct, total, score: pct });
+    addXP(15 + Math.round(pct / 5), 'Soru seti bitti', t.id);
     const ev = pct >= 75 ? 'deneme_iyi' : pct >= 50 ? 'deneme_orta' : 'deneme_kotu';
     stage.react(ev, 9000);
     const msg = pct >= 75 ? `Süpersin! ${total} sorudan ${correct} doğru.` : pct >= 50 ? `Fena değil, ${total} sorudan ${correct} doğru. Biraz daha çalışalım.` : `${total} sorudan sadece ${correct} doğru. Bu konuyu tekrar etmemiz şart.`;

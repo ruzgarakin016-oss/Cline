@@ -4,6 +4,7 @@ import { yaziliInfoSystem, yaziliExamSystem, yaziliGradeSystem } from '../prompt
 import { getSettings, addResult } from '../storage.js';
 import { nextFor, daysUntil, whenText } from '../exams.js';
 import { esc, rich, toast, needAI, errorBox, googleLink } from '../ui.js';
+import { addXP, stat } from '../progress.js';
 
 export function mountYazili(el, { t, stage }) {
   let dead = false;
@@ -57,6 +58,7 @@ export function mountYazili(el, { t, stage }) {
       if (dead) return;
       stage.think(false);
       stage.react('tekrar');
+      addXP(10, 'Yazılı hazırlık', t.id);
       stage.say(j.ozet || 'Yazılıda neler çıkabileceğini ekrana yazdım.');
       out.innerHTML = `
       <div class="card-in y-info">
@@ -113,6 +115,7 @@ export function mountYazili(el, { t, stage }) {
       if (dead) return;
       stage.think(false);
       const total = Math.max(0, Math.min(100, Math.round(+j.toplam || (j.sorular || []).reduce((a, s) => a + (+s.alinan || 0), 0))));
+      stat('yazili'); addXP(40 + Math.round(total / 4), 'Yazılı provası', t.id);
       addResult({ type: 'yazili', teacher: t.id, subject: t.subject, topic: `${donem}. dönem ${no}. yazılı provası`, score: total });
       const ev = total >= 70 ? 'yazili_iyi' : total >= 45 ? 'yazili_orta' : 'yazili_kotu';
       stage.react(ev, 10000);

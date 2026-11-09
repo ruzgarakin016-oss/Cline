@@ -1,42 +1,27 @@
-# 🤖 Sınıfım — Robot Yapay Zekâ Hocalar
+# 🤖 Sınıfım — Robot Yapay Zekâ Akademisi
 
-Tablet için ders uygulaması. Her dersin sevimli bir **robot yapay zekâ hocası** var. Hocaların yüzü ekran gibi: gözleri parlar, konuşurken ağzı ses dalgası gibi oynar, antenindeki ışık sabrını gösterir.
+Tablet için yapay zekâ destekli çalışma uygulaması. Dokuz sevimli **robot hoca** var: Piko (Matematik), Hece (Türk Dili ve Edebiyatı), Volt (Fizik), Lingo (İngilizce), Krono (Tarih), Moli (Kimya), Filiz (Biyoloji), Atlas (Coğrafya), Turbo (Beden Eğitimi).
 
-## Hocalar ve sabır
+## Robotlar
+- Havada süzülürler, kollarıyla jest yaparlar, konuşurken elleriyle anlatırlar, dokununca tepki verirler.
+- Ekran yüzleri: parlayan gözler (mutluyken kalp gözler), ses dalgası ağız, göğüste ekolayzer.
+- **Her robotun ayrı sesi var**: farklı perde ve hız, kendine has "bip" imza sesi. Tablette birden fazla Türkçe ses varsa robotlara farklı sesler dağıtılır (Ayarlar'dan değiştirilebilir). Lingo İngilizce cümleleri İngilizce sesle okur.
+- **Akıcı konuşma**: yapay zekâ cevabı yazarken robot hazır cümleleri hemen okumaya başlar.
+- Yüz ifadeleri **sabra bağlıdır**, rastgele değil (85+ çok mutlu … 0–19 çok kızgın).
 
-Piko (Matematik), Hece (Türk Dili ve Edebiyatı), Volt (Fizik), Lingo (İngilizce), Krono (Tarih), Moli (Kimya), Filiz (Biyoloji), Atlas (Coğrafya), Turbo (Beden Eğitimi).
+## Bölümler (her robot için)
+💬 Sohbet (yazılı / canlı sesli) · 📷 Soru Sor (fotoğraf) · ✍️ Tahta (parmakla/kalemle çöz, robot kontrol etsin) · ✏️ Soru Çöz · 📝 Deneme (net hesabı) · 🗒️ Yazılı (konular, çözümlü örnekler, yazılı provası ve puanlama) · 🔁 Tekrar kartları · 📊 Karne (konu konu ustalık + hata defteri)
 
-Yüz ifadeleri **rastgele değil**, her hocanın **sabrına** bağlı:
+## Uygulama geneli
+- **Yapay zekâ koç**: yazılılara, zayıf konulara ve hata defterine göre günlük plan.
+- **Hata defteri**: yanlışlar aralıklı tekrarla (Leitner) tam zamanında yeniden sorulur.
+- **XP, seviye, günlük seri, 20 rozet**, günlük XP hedefi, 7 günlük grafik.
+- **Odak modu**: robotla süreli çalışma; uygulamadan çıkarsan robot fark eder ve kızar.
+- **Genel tekrar**: robotlar sırayla soru sorar.
+- **Yazılı takvimi** (MEB 2026-2027 ortak yazılı tarihleri hazır), ders programı, hatırlatıcılar, günlük soru hakkı.
 
-| Sabır | İfade |
-|---|---|
-| 85+ | 🤩 Çok mutlu |
-| 70–84 | 😊 Mutlu |
-| 50–69 | 🙂 Sakin |
-| 35–49 | 🤨 Şüpheli |
-| 20–34 | 😠 Kızgın |
-| 0–19 | 🤬 Çok kızgın |
-
-Doğru cevap, iyi deneme ve yazılı sonuçları sabrı artırır. Yanlış cevap, cevap vermemek ve kabalık sabrı düşürür. Hocalar zamanla kendiliğinden sakinleşir. Sertlik ayarı, sabrın ne kadar hızlı düştüğünü belirler.
-
-## Her hocanın bölümleri
-
-- 💬 **Ders**: Yazarak ya da canlı (sesli) konuşarak ders. Hoca soru sorar, süre işler, cevap vermezsen kızar.
-- 📷 **Soru Sor**: Sorunun ya da deneme sayfasının fotoğrafını at, hoca adım adım çözsün. "Anlamadım / daha basit anlat" diyebilirsin.
-- ✏️ **Soru Çöz**: Konu seç, hoca sınav tarzında çoktan seçmeli sorular sorsun. Soru başına süre var.
-- 📝 **Deneme**: Süreli deneme. Sonunda doğru, yanlış, boş, net ve çözümler gösterilir.
-- 🗒️ **Yazılı**: Yazılıda çıkabilecek konular, soru tipleri ve çözümlü örnekler. Google'da örnek yazılı ve tarih aramaları. **Yazılı provası**: cevaplarını yaz ya da kâğıdın fotoğrafını çek, hoca 100 üzerinden puanlasın.
-- 🔁 **Tekrar**: Konu özet kartları (sesli) ve kontrol testi.
-
-## Diğer sayfalar
-
-- 🌈 **Genel Tekrar**: Seçtiğin derslerin hocaları sırayla gelip soru sorar, sonunda ders ders sonuç gösterilir.
-- 🗓️ **Yazılılar**: Yazılı takvimi ve geri sayım. MEB 2026-2027 ülke geneli ortak yazılı tarihleri hazır gelir (haberlere dayanır, resmi duyurudan kontrol et). Yazılı yaklaşınca hoca uyarır.
-- 📅 **Program**: Düzenlenebilir haftalık ders programı. Ders saati gelince hoca "Neredesin?" diye uyarır.
-- ❓ **Günlük soru hakkı**: Hocaya sorulan her soru 1 hak. Hak azalınca hoca uyarır.
-
-## Yapay zekâ
-
-Uygulama claude.ai'de link (artifact) olarak açılınca hocalar kullanıcının Claude hesabıyla çalışır, anahtar gerekmez. Başka bir yerde açıldığında Ayarlar > Yapay zekâ bölümüne Claude API anahtarı girilebilir. Yapay zekâ yoksa Ders bölümü hazır soru bankasıyla çevrimdışı çalışır.
+## Ses ve mikrofon
+- claude.ai içinde (artifact olarak) açıldığında sayfa doğrudan mikrofona erişemez. Canlı sohbet bu durumda **klavye diktesi** ile çalışır: klavyedeki 🎤 tuşuyla konuşulur, konuşma bitince mesaj kendiliğinden gönderilir.
+- Uygulama kendi HTTPS adresinde açıldığında gerçek mikrofonla eller serbest sohbet çalışır (yapay zekâ için Ayarlar'a Claude API anahtarı gerekir).
 
 Bilgisayarda denemek için: `python3 -m http.server` → `http://localhost:8000`

@@ -1,10 +1,12 @@
-// Çoktan seçmeli soru çözme (tek tek, süreli, anında geri bildirim).
+// Çoktan seçmeli soru çözme (tek tek, süreli, anında geri bildirim, XP, hata defteri, karne).
 import { esc, rich, LETTERS, letterOf, line } from './ui.js';
 import { teacherById } from './teachers.js';
 import { bumpStat } from './storage.js';
+import { addXP, stat, recordAnswer } from './progress.js';
+import { addMistake, reviewMistake } from './mistakes.js';
 
-export function runQuiz(el, stage, questions, { timePer = 60, title = 'Soru Çöz', onDone } = {}) {
-  let i = 0, timer = null, left = 0, warned = false, dead = false;
+export function runQuiz(el, stage, questions, { timePer = 60, title = 'Soru Çöz', onDone, review = false } = {}) {
+  let i = 0, timer = null, left = 0, warned = false, dead = false, combo = 0;
   const answers = [];
   const qs = questions.map(q => ({ ...q, dogru: letterOf(q.dogru, (q.secenekler || []).length || 4) }));
 
@@ -19,6 +21,7 @@ export function runQuiz(el, stage, questions, { timePer = 60, title = 'Soru Çö
       <div class="q-top">
         <span class="q-count">${esc(title)} · ${i + 1}/${qs.length}</span>
         ${q.konu ? `<span class="chip">${esc(q.konu)}</span>` : ''}
+        ${combo >= 2 ? `<span class="combo">🔥 ${combo} seri</span>` : ''}
         <span class="q-timer"><i></i><b></b></span>
       </div>
       <div class="q-progress">${qs.map((_, k) => `<span class="${k < i ? (answers[k]?.ok ? 'ok' : 'no') : k === i ? 'cur' : ''}"></span>`).join('')}</div>
@@ -30,7 +33,7 @@ export function runQuiz(el, stage, questions, { timePer = 60, title = 'Soru Çö
     </div>`;
     el.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => answer(b.dataset.l)));
     left = timePer; warned = false;
-    stage.say(q.soru.length < 220 ? q.soru : `${i + 1}. soru ekranda. Dikkatle oku.`, { bubble: false });
+    stage.say(q.soru.length < 240 ? q.soru : `${i + 1}. soru ekranda. Dikkatle oku.`, { bubble: false });
     drawTimer();
     timer = setInterval(() => {
       if (document.hidden || stage.speaking) return;
@@ -49,7 +52,7 @@ export function runQuiz(el, stage, questions, { timePer = 60, title = 'Soru Çö
   function answer(L) {
     if (dead || answers[i]) return;
     stopTimer();
-    const q = qs[i];
+    const q = qs[i], t = stage.teacher;
     const ok = L === q.dogru;
     answers[i] = { picked: L, ok, q };
     el.querySelectorAll('.opt').forEach(b => {
@@ -59,13 +62,19 @@ export function runQuiz(el, stage, questions, { timePer = 60, title = 'Soru Çö
     });
     const ev = L == null ? 'sessiz' : ok ? 'dogru' : 'yanlis';
     bumpStat(L == null ? 'silent' : ok ? 'correct' : 'wrong');
+    recordAnswer(t.id, q.konu, ok);
+    let extra = '';
+    if (ok) { combo++; const bonus = Math.min(combo, 5) * 2; addXP(10 + bonus, 'Doğru cevap', t.id); stat('correct'); if (combo >= 3) extra = ` ${combo} doğru üst üste!`; }
+    else { combo = 0; addXP(2, 'Deneme', t.id); if (!review) addMistake(q, t.id); }
+    if (review && q.mistakeId) { const r = reviewMistake(q.mistakeId, ok); if (r === 'ogrenildi') extra += ' Bu soruyu artık öğrendin, defterden çıktı!'; }
     stage.react(ev);
-    const say = line(ev, stage.teacher.id);
-    stage.say(ok ? say : `${say} Doğru cevap ${q.dogru}.`);
+    const say = line(ev, t.id);
+    stage.say(ok ? say + extra : `${say} Doğru cevap ${q.dogru}.`);
     const fb = el.querySelector('.q-feedback');
     fb.hidden = false;
     fb.className = 'q-feedback ' + (ok ? 'ok' : 'no');
     fb.innerHTML = `<b>${ok ? '✅ Doğru!' : L ? `❌ Yanlış — doğru cevap ${q.dogru}` : `⏰ Süre doldu — doğru cevap ${q.dogru}`}</b>
+      ${!ok && !review ? '<small class="note">📒 Hata defterine eklendi, yarın tekrar soracağım.</small>' : ''}
       ${q.cozum ? `<p>${rich(q.cozum)}</p>` : ''}
       <button class="btn primary next">${i + 1 < qs.length ? 'Sonraki soru →' : 'Sonuçları gör'}</button>`;
     fb.querySelector('.next').addEventListener('click', () => { i++; if (i < qs.length) show(); else finish(); });

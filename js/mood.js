@@ -44,7 +44,7 @@ export function patienceColor(p) { return p >= 70 ? '#22c55e' : p >= 50 ? '#84cc
 function reaction(ev, p) {
   switch (ev) {
     case 'dogru': return p >= 60 ? 'cok_mutlu' : 'mutlu';
-    case 'kismen': return 'dusunceli';
+    case 'kismen': return p >= 50 ? 'mutlu' : 'suphe';
     case 'yanlis': return p >= 50 ? 'hayal_kirikligi' : p >= 25 ? 'kizgin' : 'cok_kizgin';
     case 'bilmiyorum': return p >= 50 ? 'hayal_kirikligi' : 'suphe';
     case 'sessiz': return p >= 55 ? 'suphe' : p >= 30 ? 'kizgin' : 'cok_kizgin';

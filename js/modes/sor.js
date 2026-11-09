@@ -2,6 +2,7 @@
 import { llmJSON, llm, prepareImage, hasAI, aiReady } from '../ai.js';
 import { solveSystem, base, SPOKEN } from '../prompts.js';
 import { esc, rich, toast, consumeQuestion, errorBox, needAI } from '../ui.js';
+import { addXP, stat } from '../progress.js';
 
 export function mountSor(el, { t, stage }) {
   let images = [], dead = false, lastSolution = null, lastQuestion = '';
@@ -58,6 +59,8 @@ export function mountSor(el, { t, stage }) {
       render(j);
       images = []; drawThumbs(); $('.q-in').value = '';
       stage.calm();
+      if (imgs.length) stat('photos');
+      addXP(5, 'Soru sordun', t.id);
       stage.say(j.ozet || 'Çözümü ekrana yazdım, adım adım incele.');
     } catch (e) {
       stage.think(false);

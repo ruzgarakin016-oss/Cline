@@ -1,10 +1,12 @@
 // Uygulama dosyalarını önbelleğe alır: internet olmadan da açılır (çevrimdışı modda çalışır).
-const CACHE = 'sinifim-v2';
+const CACHE = 'sinifim-v3';
 const FILES = [
   './', './index.html', './manifest.webmanifest', './css/style.css',
-  './js/app.js', './js/face.js', './js/teachers.js', './js/storage.js', './js/ai.js',
-  './js/offline.js', './js/speech.js', './js/mood.js', './js/stage.js', './js/room.js', './js/ui.js', './js/quiz.js', './js/prompts.js', './js/topics.js', './js/exams.js',
-  './js/modes/ders.js', './js/modes/sor.js', './js/modes/coz.js', './js/modes/deneme.js', './js/modes/yazili.js', './js/modes/tekrar.js',
+  './js/app.js', './js/face.js', './js/teachers.js', './js/storage.js', './js/ai.js', './js/offline.js', './js/voice.js',
+  './js/mood.js', './js/stage.js', './js/room.js', './js/ui.js', './js/quiz.js', './js/prompts.js', './js/topics.js', './js/exams.js',
+  './js/progress.js', './js/mistakes.js',
+  './js/modes/ders.js', './js/modes/sor.js', './js/modes/tahta.js', './js/modes/coz.js', './js/modes/deneme.js',
+  './js/modes/yazili.js', './js/modes/tekrar.js', './js/modes/karne.js',
   './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png',
 ];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES))); self.skipWaiting(); });
