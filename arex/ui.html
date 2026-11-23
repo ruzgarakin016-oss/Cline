@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>A.R.E.X</title>
+<link rel="icon" href="/icon.svg">
+<style>
+:root{
+  --bg:#02060b;--panel:rgba(8,20,32,.72);--line:rgba(41,230,255,.22);--c:#29e6ff;--c2:#7af3ff;
+  --dim:#5d8ea3;--fg:#d9f7ff;--a:#ffb020;--r:#ff3b4e;--g:#38f5a0;--glow:0 0 12px rgba(41,230,255,.55);
+  --mono:"Cascadia Mono","Consolas","JetBrains Mono","DejaVu Sans Mono",monospace;
+}
+body.st-thinking,body.st-tool{--c:#ffb020;--c2:#ffd27a;--line:rgba(255,176,32,.25);--glow:0 0 12px rgba(255,176,32,.6)}
+body.st-alarm{--c:#ff3b4e;--c2:#ff8a96;--line:rgba(255,59,78,.3);--glow:0 0 14px rgba(255,59,78,.7)}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--fg);font:14px/1.45 var(--mono);overflow-x:hidden;transition:color .4s}
+/* arka plan: ızgara + hareketli ışık + tarama çizgileri */
+body::before{content:"";position:fixed;inset:0;z-index:-2;
+  background:
+   radial-gradient(1200px 700px at 50% 35%,rgba(41,230,255,.10),transparent 60%),
+   linear-gradient(rgba(41,230,255,.05) 1px,transparent 1px) 0 0/40px 40px,
+   linear-gradient(90deg,rgba(41,230,255,.05) 1px,transparent 1px) 0 0/40px 40px;}
+body::after{content:"";position:fixed;inset:0;z-index:50;pointer-events:none;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.18) 0 1px,transparent 1px 3px);mix-blend-mode:multiply}
+.sweep{position:fixed;left:0;right:0;height:140px;z-index:-1;pointer-events:none;
+  background:linear-gradient(180deg,transparent,rgba(41,230,255,.06),transparent);animation:sweep 7s linear infinite}
+@keyframes sweep{from{top:-140px}to{top:100%}}
+
+header{display:flex;align-items:center;gap:16px;padding:10px 18px;border-bottom:1px solid var(--line);
+  background:linear-gradient(90deg,rgba(41,230,255,.08),transparent 40%,transparent 60%,rgba(41,230,255,.08))}
+.logo{font-size:22px;font-weight:700;letter-spacing:.45em;color:var(--c);text-shadow:var(--glow);position:relative}
+.logo::after{content:attr(data-t);position:absolute;left:2px;top:0;color:var(--r);opacity:.6;clip-path:inset(0 0 60% 0);animation:glitch 4s infinite steps(1)}
+@keyframes glitch{0%,92%,100%{transform:none;opacity:0}93%{transform:translate(-3px,1px);opacity:.7}95%{transform:translate(3px,-1px);opacity:.7}97%{opacity:0}}
+.ver{color:var(--dim);font-size:12px}
+.hdr-r{margin-left:auto;display:flex;gap:14px;align-items:center;color:var(--dim);font-size:12px;flex-wrap:wrap;justify-content:flex-end}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--g);box-shadow:0 0 8px var(--g);margin-right:6px;animation:blink 2s infinite}
+@keyframes blink{50%{opacity:.35}}
+#clock{color:var(--c);font-size:15px;letter-spacing:.1em}
+.tbtn{background:none;border:1px solid var(--line);color:var(--dim);font:inherit;font-size:11px;padding:3px 8px;cursor:pointer}
+
+main{display:grid;gap:14px;padding:14px;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr) minmax(0,.9fr);
+  grid-template-areas:"cam core sys" "ev chat act"}
+@media (max-width:1150px){main{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"core core" "cam sys" "chat chat" "ev act"}}
+@media (max-width:700px){main{grid-template-columns:minmax(0,1fr);grid-template-areas:"core" "chat" "cam" "sys" "act" "ev";padding:10px}
+  header{padding:10px 12px}.logo{font-size:18px;letter-spacing:.3em}}
+
+/* köşeli HUD paneli */
+.p{position:relative;background:var(--panel);border:1px solid var(--line);padding:14px;min-width:0;
+  clip-path:polygon(0 12px,12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%);backdrop-filter:blur(3px)}
+.p::before,.p::after{content:"";position:absolute;width:18px;height:18px;border:2px solid var(--c);filter:drop-shadow(var(--glow))}
+.p::before{top:3px;right:3px;border-left:0;border-bottom:0}.p::after{bottom:3px;left:3px;border-right:0;border-top:0}
+.h{display:flex;align-items:center;gap:8px;margin:0 0 10px;font-size:12px;letter-spacing:.25em;color:var(--c);text-transform:uppercase}
+.h::before{content:"";width:6px;height:6px;background:var(--c);box-shadow:var(--glow);transform:rotate(45deg)}
+.h::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+.h small{color:var(--dim);letter-spacing:.1em}
+
+/* kamera */
+#cam{grid-area:cam}
+.view{position:relative;aspect-ratio:4/3;background:#000;overflow:hidden;border:1px solid var(--line)}
+.view img{width:100%;height:100%;object-fit:cover;display:block;filter:saturate(.85) contrast(1.05)}
+.view .nosig{position:absolute;inset:0;display:grid;place-items:center;color:var(--dim);letter-spacing:.3em;font-size:12px}
+.view::before{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;
+  background:repeating-linear-gradient(0deg,rgba(41,230,255,.07) 0 1px,transparent 1px 4px);animation:scan 8s linear infinite}
+@keyframes scan{to{background-position:0 200px}}
+.br{position:absolute;width:28px;height:28px;border:2px solid var(--c);z-index:3;filter:drop-shadow(var(--glow))}
+.br.tl{top:8px;left:8px;border-right:0;border-bottom:0}.br.tr{top:8px;right:8px;border-left:0;border-bottom:0}
+.br.bl{bottom:8px;left:8px;border-right:0;border-top:0}.br.brr{bottom:8px;right:8px;border-left:0;border-top:0}
+.cross{position:absolute;left:50%;top:50%;width:46px;height:46px;transform:translate(-50%,-50%);z-index:3;opacity:.55}
+.cross::before,.cross::after{content:"";position:absolute;background:var(--c)}
+.cross::before{left:50%;top:0;bottom:0;width:1px}.cross::after{top:50%;left:0;right:0;height:1px}
+.tag{position:absolute;z-index:3;font-size:11px;letter-spacing:.15em;padding:2px 6px;background:rgba(0,0,0,.55)}
+.tag.l{bottom:14px;left:44px;color:var(--c)}.tag.r{top:40px;right:44px;color:var(--r);display:none;animation:blink 1s infinite}
+body.armed .tag.r{display:block}
+.radar{position:absolute;right:14px;bottom:14px;width:64px;height:64px;border-radius:50%;z-index:3;border:1px solid var(--c);
+  background:radial-gradient(circle,transparent 30%,rgba(41,230,255,.08) 31% 32%,transparent 33% 62%,rgba(41,230,255,.08) 63% 64%,transparent 65%)}
+.radar::after{content:"";position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,rgba(41,230,255,.55),transparent 70deg);animation:spin 2.4s linear infinite}
+
+/* merkez çekirdek */
+#core{grid-area:core;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:360px}
+.reactor{width:min(330px,80vw);aspect-ratio:1;position:relative}
+.reactor svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.reactor .r1{animation:spin 40s linear infinite}.reactor .r2{animation:spin 18s linear infinite reverse}
+.reactor .r3{animation:spin 9s linear infinite}.reactor .r4{animation:spin 26s linear infinite reverse}
+body.st-thinking .reactor .r1,body.st-tool .reactor .r1{animation-duration:8s}
+body.st-thinking .reactor .r2,body.st-tool .reactor .r2{animation-duration:3s}
+body.st-thinking .reactor .r3,body.st-tool .reactor .r3{animation-duration:1.4s}
+body.st-alarm .reactor .r3{animation-duration:.8s}
+.reactor *{transform-origin:150px 150px;transform-box:view-box}
+.coreglow{animation:pulse 3s ease-in-out infinite}
+body.st-speaking .coreglow{animation-duration:.45s}
+@keyframes pulse{50%{opacity:.55;transform:scale(.92)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ripple{position:absolute;inset:22%;border-radius:50%;border:2px solid var(--c);opacity:0}
+body.st-speaking .ripple{animation:rip 1.2s ease-out infinite}body.st-speaking .ripple.b{animation-delay:.6s}
+@keyframes rip{from{transform:scale(.6);opacity:.9}to{transform:scale(1.5);opacity:0}}
+#stLabel{margin-top:14px;font-size:13px;letter-spacing:.45em;color:var(--c);text-shadow:var(--glow)}
+#stSub{color:var(--dim);font-size:11px;letter-spacing:.2em;margin-top:4px;text-align:center}
+
+/* sistem */
+#sys{grid-area:sys}
+.gauges{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.gauge{position:relative;text-align:center}
+.gauge svg{width:100%;max-width:96px}.gauge circle[id]{transition:stroke-dasharray .8s;filter:drop-shadow(0 0 4px var(--c))}
+.gauge .v{position:absolute;left:0;right:0;top:34%;font-size:17px;color:var(--c);text-shadow:var(--glow)}
+.gauge .n{font-size:10px;letter-spacing:.25em;color:var(--dim)}
+.meta{display:flex;justify-content:space-between;color:var(--dim);font-size:12px;margin:8px 0 12px;gap:8px;flex-wrap:wrap}
+.meta b{color:var(--fg);font-weight:400}
+.mood{display:grid;grid-template-columns:90px 1fr;gap:6px 10px;align-items:center;font-size:11px;color:var(--dim);letter-spacing:.1em}
+.seg{display:grid;grid-template-columns:repeat(12,1fr);gap:3px}.seg i{height:8px;background:rgba(41,230,255,.12)}
+.seg i.on{background:var(--c);box-shadow:var(--glow)}
+.ctrl{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+button.b{position:relative;background:rgba(41,230,255,.06);border:1px solid var(--line);color:var(--c);font:inherit;font-size:11px;
+  letter-spacing:.15em;padding:9px 6px;cursor:pointer;text-transform:uppercase;transition:.15s;
+  clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px))}
+button.b:hover{background:rgba(41,230,255,.18);box-shadow:inset 0 0 12px rgba(41,230,255,.35);color:#fff}
+button.b:active{transform:translateY(1px)}
+button.b.warn{color:var(--a);border-color:rgba(255,176,32,.4)}button.b.red{color:var(--r);border-color:rgba(255,59,78,.45)}
+body.armed #bArm{background:rgba(255,59,78,.2);color:#fff}
+.mods{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{font-size:11px;border:1px solid var(--line);padding:2px 8px;color:var(--c2)}
+
+/* sohbet terminali */
+#chat{grid-area:chat;display:flex;flex-direction:column;min-height:320px}
+#log{flex:1;min-height:200px;max-height:380px;overflow:auto;white-space:pre-wrap;word-break:break-word;font-size:13px;padding-right:4px}
+#log .u{color:var(--dim)}#log .u::before{content:"> ";color:var(--c)}
+#log .a{color:var(--fg);margin:2px 0 12px}#log .a::before{content:"AREX ▸ ";color:var(--c)}
+.caret{display:inline-block;width:8px;height:14px;background:var(--c);vertical-align:-2px;animation:blink .8s steps(1) infinite}
+form.cmd{display:flex;gap:8px;margin-top:10px;border-top:1px solid var(--line);padding-top:10px}
+form.cmd span{color:var(--c);padding-top:7px}
+form.cmd input{flex:1;min-width:0;background:transparent;border:0;border-bottom:1px solid var(--line);color:var(--fg);font:inherit;padding:6px 2px;outline:0}
+form.cmd input:focus{border-color:var(--c)}
+.hint{color:var(--dim);font-size:11px;margin-top:6px}
+
+#ev{grid-area:ev}#act{grid-area:act}
+.list{max-height:300px;overflow:auto;font-size:12px}
+.list div{padding:6px 0;border-bottom:1px dashed var(--line)}
+.list .t{color:var(--c)}.list .x{color:var(--dim)}
+.list a{color:var(--c2)}
+.list .ty-motion .t,.list .ty-tamper .t{color:var(--r)}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-thumb{background:var(--line)}
+
+/* açılış ekranı */
+#boot{position:fixed;inset:0;z-index:100;background:#010306;display:flex;flex-direction:column;justify-content:center;padding:8vw;
+  color:var(--c);font-size:14px;letter-spacing:.1em;transition:opacity .6s}
+#boot.gone{opacity:0;pointer-events:none}
+#boot .bar{height:2px;background:var(--line);margin-top:18px;max-width:520px}#boot .bar i{display:block;height:100%;width:0;background:var(--c);box-shadow:var(--glow);transition:width .25s}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}.sweep{display:none}}
+</style>
+</head>
+<body class="st-idle">
+<div class="sweep"></div>
+<div id="boot"><div id="bootTxt"></div><div class="bar"><i id="bootBar"></i></div></div>
+
+<header>
+  <div class="logo" data-t="A.R.E.X">A.R.E.X</div><span class="ver" id="ver"></span>
+  <div class="hdr-r"><span><span class="dot"></span><span id="link">ÇEVRİMİÇİ</span></span>
+    <span id="date"></span><span id="clock">--:--:--</span>
+    <button class="tbtn" id="snd" title="Arayüz sesleri">SES: AÇIK</button></div>
+</header>
+
+<main>
+  <section class="p" id="core">
+    <div class="reactor" aria-hidden="true">
+      <div class="ripple"></div><div class="ripple b"></div>
+      <svg viewBox="0 0 300 300">
+        <defs>
+          <radialGradient id="cg"><stop offset="0" stop-color="#fff"/><stop offset=".35" style="stop-color:var(--c2)"/><stop offset="1" style="stop-color:var(--c)" stop-opacity="0"/></radialGradient>
+          <filter id="gl"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <g class="r1" filter="url(#gl)"><circle cx="150" cy="150" r="142" fill="none" style="stroke:var(--c)" stroke-opacity=".35"/><g id="ticks"></g></g>
+        <g class="r4"><circle cx="150" cy="150" r="124" fill="none" style="stroke:var(--c)" stroke-width="1" stroke-dasharray="2 6" stroke-opacity=".7"/></g>
+        <g class="r2" filter="url(#gl)"><circle cx="150" cy="150" r="108" fill="none" style="stroke:var(--c)" stroke-width="6" stroke-dasharray="60 25 12 25" stroke-opacity=".75"/></g>
+        <g class="r3" filter="url(#gl)"><circle cx="150" cy="150" r="86" fill="none" style="stroke:var(--c2)" stroke-width="2" stroke-dasharray="120 50 30 70"/>
+          <circle cx="150" cy="64" r="4" style="fill:var(--c2)"/></g>
+        <g filter="url(#gl)" id="tri"></g>
+        <circle class="coreglow" cx="150" cy="150" r="58" fill="url(#cg)"/>
+        <circle cx="150" cy="150" r="40" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width="1.5"/>
+      </svg>
+    </div>
+    <div id="stLabel">BEKLEMEDE</div><div id="stSub">SİSTEM HAZIR</div>
+  </section>
+
+  <section class="p" id="cam">
+    <div class="h">Görsel sensör <small id="camSt"></small></div>
+    <div class="view"><div class="nosig">SİNYAL YOK</div><img id="live" alt="Canlı kamera görüntüsü">
+      <span class="br tl"></span><span class="br tr"></span><span class="br bl"></span><span class="br brr"></span>
+      <div class="cross"></div><div class="tag l" id="camTag">CAM-01 ▪ CANLI</div><div class="tag r">● REC ▪ ALARM</div><div class="radar"></div></div>
+    <div class="ctrl"><button class="b red" id="bArm">Alarm</button><button class="b" id="bSnap">Fotoğraf</button><button class="b" id="bCam">Kamera</button></div>
+  </section>
+
+  <section class="p" id="sys">
+    <div class="h">Sistem durumu</div>
+    <div class="gauges" id="gauges"></div>
+    <div class="meta"><span>SICAKLIK <b id="temp">--</b></span><span>PİL <b id="bat">--</b></span></div>
+    <div class="h">Duygu çekirdeği</div><div class="mood" id="mood"></div>
+    <div class="h" style="margin-top:14px">Modüller <small id="modN"></small></div><div class="mods" id="mods"></div>
+    <div class="ctrl"><button class="b warn" id="bUpd">Güncelle</button><button class="b warn" id="bRb">Geri al</button><button class="b" id="bRs">Yeniden başlat</button></div>
+  </section>
+
+  <section class="p" id="chat">
+    <div class="h">Komut terminali</div>
+    <div id="log"></div>
+    <form class="cmd" id="f"><span>&gt;</span><input id="q" autocomplete="off" placeholder="Komut ver... (ör. kendine kripto fiyatı söyleyen bir yetenek yaz)"><button class="b">Gönder</button></form>
+    <div class="hint">İpucu: "…yapabilen bir yetenek yaz", "şu eklentiyi değiştir", "VLC'yi kur", "alarmı aç"</div>
+  </section>
+
+  <section class="p" id="ev"><div class="h">Olay kaydı</div><div class="list" id="evList"></div></section>
+  <section class="p" id="act"><div class="h">Araç etkinliği</div><div class="list" id="actList"></div></section>
+</main>
+
+<script>
+const T=new URLSearchParams(location.search).get('token')||'';
+const q=p=>p+(p.includes('?')?'&':'?')+'token='+encodeURIComponent(T);
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let S={armed:false},sound=true,ac=null;
+try{sound=localStorage.getItem('arexSnd')!=='0'}catch(e){}
+
+/* ---------- ses efektleri (WebAudio, dosya yok) ---------- */
+function beep(f=880,d=.06,type='square',v=.04){if(!sound)return;try{ac=ac||new AudioContext();const o=ac.createOscillator(),g=ac.createGain();
+ o.type=type;o.frequency.value=f;g.gain.value=v;g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+d);o.connect(g).connect(ac.destination);o.start();o.stop(ac.currentTime+d)}catch(e){}}
+const chirp=()=>{beep(1200,.04);setTimeout(()=>beep(1800,.05),50)};
+$('snd').onclick=()=>{sound=!sound;$('snd').textContent='SES: '+(sound?'AÇIK':'KAPALI');try{localStorage.setItem('arexSnd',sound?'1':'0')}catch(e){};chirp()};
+$('snd').textContent='SES: '+(sound?'AÇIK':'KAPALI');
+
+/* ---------- reaktör süsleri ---------- */
+(function(){let t='';for(let i=0;i<72;i++){const a=i*5*Math.PI/180,r1=i%6?136:130,r2=142;
+ t+=`<line x1="${150+r1*Math.cos(a)}" y1="${150+r1*Math.sin(a)}" x2="${150+r2*Math.cos(a)}" y2="${150+r2*Math.sin(a)}" style="stroke:var(--c)" stroke-width="${i%6?1:2}" stroke-opacity="${i%6?.5:.9}"/>`}
+ $('ticks').innerHTML=t;let g='';for(let i=0;i<3;i++){const a=(i*120-90)*Math.PI/180;
+ g+=`<path d="M${150+70*Math.cos(a-.25)} ${150+70*Math.sin(a-.25)} A70 70 0 0 1 ${150+70*Math.cos(a+.25)} ${150+70*Math.sin(a+.25)}" style="stroke:var(--c)" stroke-width="10" fill="none" opacity=".85"/>`}
+ $('tri').innerHTML=g})();
+
+/* ---------- göstergeler ---------- */
+const G=['cpu','mem','disk'],GN={cpu:'İŞLEMCİ',mem:'BELLEK',disk:'DİSK'};
+$('gauges').innerHTML=G.map(k=>`<div class="gauge"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="rgba(41,230,255,.12)" stroke-width="7" stroke-dasharray="188 252" transform="rotate(135 50 50)"/>
+<circle id="g_${k}" cx="50" cy="50" r="40" fill="none" style="stroke:var(--c)" stroke-width="7" stroke-dasharray="0 252" transform="rotate(135 50 50)"/></svg>
+<div class="v" id="v_${k}">--</div><div class="n">${GN[k]}</div></div>`).join('');
+function setG(k,v){v=Math.max(0,Math.min(100,v||0));$('g_'+k).setAttribute('stroke-dasharray',(188*v/100).toFixed(1)+' 252');$('v_'+k).textContent=Math.round(v)+'%'}
+
+/* ---------- saat ---------- */
+setInterval(()=>{const d=new Date();$('clock').textContent=d.toLocaleTimeString('tr-TR');$('date').textContent=d.toLocaleDateString('tr-TR',{weekday:'short',day:'2-digit',month:'short'}).toUpperCase()},1000);
+
+/* ---------- API ---------- */
+async function api(p,b){const r=await fetch(q(p),b?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)}:{});return r.json()}
+const STL={idle:['BEKLEMEDE','SİSTEM HAZIR'],thinking:['DÜŞÜNÜYOR','SİNİR AĞI ÇALIŞIYOR'],tool:['ARAÇ ÇALIŞIYOR','GÖREV YÜRÜTÜLÜYOR'],
+ speaking:['KONUŞUYOR','SES ÇIKIŞI AKTİF'],alarm:['ALARM','İHLAL ALGILANDI']};
+let lastEv='',lastAct='',camOn=null;
+async function refresh(){
+ try{
+  const s=await api('/api/status');S=s;$('link').textContent='ÇEVRİMİÇİ';
+  document.body.className='st-'+s.state+(s.armed?' armed':'');
+  const L=STL[s.state]||STL.idle;$('stLabel').textContent=L[0];$('stSub').textContent=L[1];
+  $('ver').textContent='v'+s.version;$('camSt').textContent=(s.camera||'').toUpperCase();
+  $('bArm').textContent=s.armed?'Alarm: açık':'Alarm: kapalı';
+  const on=s.camera==='açık';if(on!==camOn){camOn=on;$('live').style.display=on?'block':'none';if(on)$('live').src=q('/stream.mjpg?'+Date.now())}
+  const st=s.stats||{};G.forEach(k=>setG(k,st[k]));
+  $('temp').textContent=st.temp!=null?Math.round(st.temp)+'°C':'--';
+  $('bat').textContent=st.battery!=null?st.battery+'%'+(st.charging?' ⚡':''):'--';
+  $('mood').innerHTML=Object.entries(s.mood||{}).map(([k,v])=>{const n=Math.round(v*12);
+   return `<span>${esc(k.toUpperCase())}</span><div class="seg">${Array.from({length:12},(_,i)=>`<i class="${i<n?'on':''}"></i>`).join('')}</div>`}).join('');
+  const m=Object.entries(s.plugins||{});$('modN').textContent=m.length+' eklenti';
+  $('mods').innerHTML=m.map(([k,v])=>`<span class="chip" title="${esc(v.join(', '))}">${esc(k)}</span>`).join('')||'<span class="x" style="color:var(--dim);font-size:12px">Henüz kendi yazdığı yetenek yok</span>';
+  const e=await api('/api/events');const ek=JSON.stringify(e.slice(-1));if(ek!==lastEv&&lastEv&&e.length)beep(440,.25,'sawtooth',.05);lastEv=ek;
+  $('evList').innerHTML=e.slice().reverse().map(x=>`<div class="ty-${esc(x.type)}"><span class="t">${esc(x.time.slice(5))}</span> ${esc(x.text)} ${x.snapshot?`<a target="_blank" href="${q('/media/'+encodeURIComponent(x.snapshot))}">[foto]</a>`:''}</div>`).join('')||'<div class="x">Olay yok</div>';
+  const a=await api('/api/activity');const ak=JSON.stringify(a.slice(-1));if(ak!==lastAct&&lastAct)beep(1500,.03);lastAct=ak;
+  $('actList').innerHTML=a.slice().reverse().map(x=>`<div><span class="t">${esc(x.t)} ${esc(x.tool)}</span> <span class="x">${esc(x.args)}</span><br>${esc(x.result)}</div>`).join('')||'<div class="x">Henüz araç kullanılmadı</div>';
+ }catch(err){$('link').textContent='BAĞLANTI YOK';document.body.className='st-alarm'}
+}
+
+/* ---------- terminal ---------- */
+function addLine(cls,text,typed){const d=document.createElement('div');d.className=cls;$('log').appendChild(d);
+ if(!typed||matchMedia('(prefers-reduced-motion: reduce)').matches){d.textContent=text;$('log').scrollTop=1e9;return}
+ let i=0;const c=document.createElement('span');c.className='caret';const step=()=>{d.textContent=text.slice(0,i);d.appendChild(c);$('log').scrollTop=1e9;
+  if(i<text.length){i+=Math.max(1,Math.round(text.length/220));if(i%6===0)beep(2400,.012,'square',.015);setTimeout(step,14)}else c.remove()};step()}
+$('f').onsubmit=async ev=>{ev.preventDefault();const t=$('q').value.trim();if(!t)return;$('q').value='';chirp();addLine('u',t);
+ document.body.className='st-thinking'+(S.armed?' armed':'');
+ try{const r=await api('/api/chat',{text:t});addLine('a',r.reply,true)}catch(e){addLine('a','Bağlantı hatası.')}refresh()};
+
+/* ---------- düğmeler ---------- */
+const act=async(n,ask)=>{if(ask&&!confirm(ask))return;chirp();const r=await api('/api/action',{name:n});addLine('a',r.result||r.error||'tamam',true);setTimeout(refresh,500)};
+$('bArm').onclick=async()=>{chirp();await api('/api/arm',{on:!S.armed});refresh()};
+$('bCam').onclick=async()=>{chirp();await api('/api/camera',{});camOn=null;setTimeout(refresh,900)};
+$('bSnap').onclick=async()=>{chirp();const r=await api('/api/snapshot',{});if(r.file)window.open(q('/media/'+encodeURIComponent(r.file)))};
+$('bUpd').onclick=()=>act('update','Yeni sürüm indirilip kurulsun mu?');
+$('bRb').onclick=()=>act('rollback','Son yedeğe geri dönülsün mü?');
+$('bRs').onclick=()=>act('restart','Arex yeniden başlatılsın mı?');
+
+/* ---------- açılış animasyonu ---------- */
+(function(){const lines=['A.R.E.X ÇEKİRDEK BAŞLATILIYOR','> sinir ağı bağlantısı ........ OK','> görsel sensörler ........... OK',
+ '> ses modülleri ............... OK','> eklenti yükleyici ........... OK','> güvenlik protokolleri ....... AKTİF','SİSTEM ÇEVRİMİÇİ'];
+ const box=$('bootTxt'),bar=$('bootBar');let i=0;
+ if(matchMedia('(prefers-reduced-motion: reduce)').matches||sessionStorage.getItem('arexBoot')){$('boot').remove();return}
+ const nx=()=>{if(i<lines.length){box.innerHTML+=esc(lines[i])+'<br>';bar.style.width=((i+1)/lines.length*100)+'%';i++;setTimeout(nx,190)}
+  else{setTimeout(()=>{$('boot').classList.add('gone');setTimeout(()=>$('boot').remove(),700)},300);try{sessionStorage.setItem('arexBoot','1')}catch(e){}}};
+ $('boot').onclick=()=>{i=lines.length};nx()})();
+
+addLine('a','Merhaba. Bana komut ver ya da yeni bir yetenek yazmamı iste.');
+refresh();setInterval(refresh,2500);
+</script>
+</body>
+</html>

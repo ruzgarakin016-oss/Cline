@@ -1,0 +1,5 @@
+vosk
+sounddevice
+numpy
+opencv-contrib-python-headless   # kamera, hareket, yüz algılama + tanıma (LBPH)
+pillow                           # Windows ekran goruntusu
